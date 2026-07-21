@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "gbm": {
+    "inputs": {
+      "expectedExcessReturn": 0.06,
+      "volatility": 0.2,
+      "riskFreeRate": 0.02,
+      "borrowingSpread": 0.0,
+      "cap": 3.0
+    },
+    "expected": {
+      "theoreticalFraction": 1.5,
+      "fullLogGrowth": 0.065,
+      "fullGeometricReturn": 0.06715902438419262,
+      "twoXLogGrowth": 0.06,
+      "twoXGeometricReturn": 0.06183654654535964,
+      "twoXArithmeticReturn": 0.1502737988572274,
+      "halfFractionOfMaximumExcessGrowth": 0.75
+    }
+  },
+  "binomial": {
+    "winProbability": 0.6,
+    "winReturn": 1.0,
+    "lossReturn": -1.0,
+    "expectedFraction": 0.2
+  },
+  "metrics": {
+    "prices": [100.0, 120.0, 90.0, 110.0],
+    "dates": ["2024-01-01", "2024-01-02", "2024-01-03", "2024-01-04"],
+    "expected": {
+      "cumulativeReturn": 0.1,
+      "maximumDrawdown": 0.25
+    }
+  },
+  "ruin": {
+    "returns": [-0.6],
+    "leverage": 2.0,
+    "expectedStatus": "ruin"
+  }
+}

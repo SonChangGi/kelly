@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sonchanggi.github.io/kelly/schemas/kelly-price-series.schema.json",
+  "title": "Kelly live normalized price series",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "contract",
+    "state",
+    "generatedAt",
+    "dataAsOf",
+    "symbols",
+    "metadata",
+    "dates",
+    "prices",
+    "returns",
+    "fx",
+    "source",
+    "limitations"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "contract": { "const": "kelly-price-series" },
+    "state": { "$ref": "#/$defs/state" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "dataAsOf": {
+      "oneOf": [
+        { "type": "string", "format": "date" },
+        { "type": "null" }
+      ]
+    },
+    "symbols": {
+      "type": "array",
+      "maxItems": 5,
+      "items": { "type": "string", "minLength": 1, "maxLength": 24 }
+    },
+    "metadata": {
+      "type": "array",
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "symbol", "name", "assetType", "exchange", "currency", "timezone"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+          "symbol": { "type": "string", "minLength": 1, "maxLength": 24 },
+          "name": { "type": "string", "minLength": 1 },
+          "assetType": { "type": "string", "enum": ["equity", "etf", "index", "fx"] },
+          "exchange": { "type": "string", "minLength": 1 },
+          "currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+          "timezone": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "dates": {
+      "type": "array",
+      "maxItems": 5000,
+      "items": { "type": "string", "format": "date" }
+    },
+    "prices": {
+      "type": "array",
+      "maxItems": 5,
+      "items": {
+        "type": "array",
+        "maxItems": 5000,
+        "items": { "type": ["number", "null"], "exclusiveMinimum": 0 }
+      }
+    },
+    "returns": {
+      "type": "array",
+      "maxItems": 5,
+      "items": {
+        "type": "array",
+        "maxItems": 5000,
+        "items": { "type": ["number", "null"] }
+      }
+    },
+    "fx": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["base", "quote", "rates"],
+          "properties": {
+            "base": { "type": "string", "pattern": "^[A-Z]{3}$" },
+            "quote": { "type": "string", "pattern": "^[A-Z]{3}$" },
+            "rates": {
+              "type": "array",
+              "maxItems": 5000,
+              "items": { "type": ["number", "null"], "exclusiveMinimum": 0 }
+            }
+          }
+        }
+      ]
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider",
+        "normalized",
+        "rawRedistribution",
+        "frequency",
+        "priceField",
+        "attribution"
+      ],
+      "properties": {
+        "provider": { "type": "string", "enum": ["twelve_data", "none"] },
+        "normalized": { "const": true },
+        "rawRedistribution": { "const": false },
+        "frequency": { "const": "daily" },
+        "priceField": { "const": "close" },
+        "attribution": { "type": "string", "minLength": 1 }
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    }
+  },
+  "$defs": {
+    "state": {
+      "type": "string",
+      "enum": ["published", "live_api", "stale", "degraded", "unavailable", "ruin"]
+    }
+  }
+}

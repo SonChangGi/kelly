@@ -1,0 +1,7 @@
+name = "kelly-data"
+main = "src/index.js"
+compatibility_date = "2026-07-21"
+
+[vars]
+ALLOWED_ORIGINS = "https://sonchanggi.github.io"
+TWELVE_DATA_RIGHTS_APPROVED = "false"

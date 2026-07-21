@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sonchanggi.github.io/kelly/schemas/summary.schema.json",
+  "title": "Kelly public research summary",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "contract",
+    "projectId",
+    "title",
+    "state",
+    "generatedAt",
+    "dataAsOf",
+    "status",
+    "coverage",
+    "primaryEntities",
+    "limitations"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "contract": { "const": "quant-research-summary" },
+    "projectId": { "const": "kelly" },
+    "title": { "type": "string", "minLength": 1 },
+    "state": { "$ref": "#/$defs/state" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "dataAsOf": {
+      "oneOf": [
+        { "type": "string", "format": "date" },
+        { "type": "null" }
+      ]
+    },
+    "status": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "label", "message"],
+      "properties": {
+        "state": { "$ref": "#/$defs/state" },
+        "label": { "type": "string", "minLength": 1 },
+        "message": { "type": "string", "minLength": 1 }
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["assetCount", "availableAssetCount", "frequency"],
+      "properties": {
+        "assetCount": { "type": "integer", "minimum": 0 },
+        "availableAssetCount": { "type": "integer", "minimum": 0 },
+        "frequency": { "const": "daily" }
+      }
+    },
+    "primaryEntities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name", "kind", "state", "headlineMetrics", "detailUrl"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+          "name": { "type": "string", "minLength": 1 },
+          "kind": { "type": "string", "enum": ["research", "calculator", "asset"] },
+          "state": { "$ref": "#/$defs/state" },
+          "headlineMetrics": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "label", "value", "unit", "state"],
+              "properties": {
+                "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+                "label": { "type": "string", "minLength": 1 },
+                "value": { "type": ["number", "null"] },
+                "unit": { "type": "string", "enum": ["fraction", "percent", "ratio", "currency"] },
+                "state": { "$ref": "#/$defs/state" }
+              }
+            }
+          },
+          "detailUrl": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    }
+  },
+  "$defs": {
+    "state": {
+      "type": "string",
+      "enum": ["published", "live_api", "stale", "degraded", "unavailable", "ruin"]
+    }
+  }
+}

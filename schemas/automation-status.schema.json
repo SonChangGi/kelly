@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sonchanggi.github.io/kelly/schemas/automation-status.schema.json",
+  "title": "Kelly data automation status",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "contract",
+    "projectId",
+    "state",
+    "generatedAt",
+    "dataAsOf",
+    "lastAttemptAt",
+    "lastSuccessAt",
+    "schedule",
+    "provider",
+    "publication",
+    "reasonCodes"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "contract": { "const": "kelly-automation-status" },
+    "projectId": { "const": "kelly" },
+    "state": { "$ref": "#/$defs/state" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "dataAsOf": { "$ref": "#/$defs/nullableDate" },
+    "lastAttemptAt": { "$ref": "#/$defs/nullableDateTime" },
+    "lastSuccessAt": { "$ref": "#/$defs/nullableDateTime" },
+    "schedule": { "type": "string", "minLength": 1 },
+    "provider": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "configured", "rightsApproved", "normalizedOnly"],
+      "properties": {
+        "name": { "const": "twelve_data" },
+        "configured": { "type": "boolean" },
+        "rightsApproved": { "type": "boolean" },
+        "normalizedOnly": { "const": true }
+      }
+    },
+    "publication": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target", "latestPublishedAt", "assetCount"],
+      "properties": {
+        "target": { "const": "github_pages" },
+        "latestPublishedAt": { "$ref": "#/$defs/nullableDateTime" },
+        "assetCount": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "reasonCodes": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^[a-z0-9_]+$" }
+    }
+  },
+  "$defs": {
+    "state": {
+      "type": "string",
+      "enum": ["published", "live_api", "stale", "degraded", "unavailable", "ruin"]
+    },
+    "nullableDate": {
+      "oneOf": [
+        { "type": "string", "format": "date" },
+        { "type": "null" }
+      ]
+    },
+    "nullableDateTime": {
+      "oneOf": [
+        { "type": "string", "format": "date-time" },
+        { "type": "null" }
+      ]
+    }
+  }
+}

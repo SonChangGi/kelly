@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "contract": "kelly-automation-status",
+  "projectId": "kelly",
+  "state": "unavailable",
+  "generatedAt": "2026-07-21T00:00:00+09:00",
+  "dataAsOf": null,
+  "lastAttemptAt": null,
+  "lastSuccessAt": null,
+  "schedule": "weekdays after source-market close",
+  "provider": {
+    "name": "twelve_data",
+    "configured": false,
+    "rightsApproved": false,
+    "normalizedOnly": true
+  },
+  "publication": {
+    "target": "github_pages",
+    "latestPublishedAt": null,
+    "assetCount": 0
+  },
+  "reasonCodes": [
+    "provider_rights_not_confirmed",
+    "server_secret_not_configured"
+  ]
+}

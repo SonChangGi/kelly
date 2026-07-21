@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sonchanggi.github.io/kelly/schemas/asset.schema.json",
+  "title": "Kelly normalized static asset history",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "contract",
+    "state",
+    "assetId",
+    "generatedAt",
+    "dataAsOf",
+    "metadata",
+    "dates",
+    "prices",
+    "returns",
+    "source",
+    "limitations"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "contract": { "const": "kelly-asset-history" },
+    "state": { "$ref": "#/$defs/state" },
+    "assetId": { "type": "string", "pattern": "^(?:[a-z0-9-]+|__unavailable__)$" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "dataAsOf": {
+      "oneOf": [
+        { "type": "string", "format": "date" },
+        { "type": "null" }
+      ]
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["symbol", "assetType", "exchange", "timezone", "returnBasis"],
+      "properties": {
+        "symbol": { "type": "string", "minLength": 1, "maxLength": 24 },
+        "assetType": { "type": "string", "enum": ["equity", "etf", "index", "fx"] },
+        "exchange": { "type": "string", "minLength": 1 },
+        "timezone": { "type": "string", "minLength": 1 },
+        "returnBasis": {
+          "type": "string",
+          "enum": ["price_return", "total_return_approximation", "fx_rate"]
+        },
+        "baseCurrency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+        "quoteCurrency": { "type": "string", "pattern": "^[A-Z]{3}$" }
+      }
+    },
+    "dates": {
+      "type": "array",
+      "items": { "type": "string", "format": "date" }
+    },
+    "prices": {
+      "type": "array",
+      "items": { "type": "number", "exclusiveMinimum": 0 }
+    },
+    "returns": {
+      "type": "array",
+      "items": { "type": ["number", "null"] }
+    },
+    "fx": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pair", "dates", "rates", "maxStalenessDays"],
+      "properties": {
+        "pair": { "type": "string", "pattern": "^[A-Z]{3}/[A-Z]{3}$" },
+        "dates": {
+          "type": "array",
+          "items": { "type": "string", "format": "date" }
+        },
+        "rates": {
+          "type": "array",
+          "items": { "type": "number", "exclusiveMinimum": 0 }
+        },
+        "maxStalenessDays": { "type": "integer", "minimum": 0, "maximum": 10 }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider",
+        "normalized",
+        "rawRedistribution",
+        "license",
+        "attribution",
+        "cachedAt"
+      ],
+      "properties": {
+        "provider": { "type": "string", "enum": ["twelve_data", "krx", "none"] },
+        "normalized": { "const": true },
+        "rawRedistribution": { "const": false },
+        "sourceUrl": { "type": "string", "format": "uri" },
+        "license": { "type": "string", "minLength": 1 },
+        "attribution": { "type": "string", "minLength": 1 },
+        "cachedAt": {
+          "oneOf": [
+            { "type": "string", "format": "date-time" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    }
+  },
+  "$defs": {
+    "state": {
+      "type": "string",
+      "enum": ["published", "live_api", "stale", "degraded", "unavailable", "ruin"]
+    }
+  }
+}

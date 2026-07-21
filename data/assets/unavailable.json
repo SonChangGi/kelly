@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "contract": "kelly-asset-history",
+  "state": "unavailable",
+  "assetId": "__unavailable__",
+  "generatedAt": "2026-07-21T00:00:00+09:00",
+  "dataAsOf": null,
+  "metadata": {
+    "symbol": "N/A",
+    "assetType": "index",
+    "exchange": "NONE",
+    "timezone": "UTC",
+    "returnBasis": "price_return"
+  },
+  "dates": [],
+  "prices": [],
+  "returns": [],
+  "source": {
+    "provider": "none",
+    "normalized": true,
+    "rawRedistribution": false,
+    "license": "No provider observations published",
+    "attribution": "No market observations published",
+    "cachedAt": null
+  },
+  "limitations": [
+    "공급자 이용 권리와 서버 측 API 비밀키가 확인되기 전의 명시적 미제공 상태입니다."
+  ]
+}

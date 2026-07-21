@@ -1,0 +1,19 @@
+{
+  "name": "kelly-allocation-lab-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "vendor": "node scripts/vendor-echarts.mjs",
+    "test": "node --test tests/js/*.test.mjs",
+    "check": "node --check site/assets/engine.js && node --check site/assets/charts.js && node --check site/assets/app.js && npm test",
+    "build": "npm run vendor && .venv/bin/python -m kelly_lab.site --output dist",
+    "serve": "python3 -m http.server 8765 --directory dist"
+  },
+  "dependencies": {
+    "echarts": "6.1.0"
+  },
+  "devDependencies": {
+    "happy-dom": "20.11.0"
+  }
+}

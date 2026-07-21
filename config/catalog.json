@@ -1,0 +1,388 @@
+{
+  "schemaVersion": 1,
+  "contract": "kelly-provider-catalog-config",
+  "catalogVersion": "2026-07-21-v2",
+  "defaultProvider": "twelve_data",
+  "assets": [
+    {
+      "id": "kr-005930",
+      "provider": "krx",
+      "providerSymbol": "005930",
+      "providerExchange": "KRX",
+      "symbol": "005930.KS",
+      "returnBasis": "price_return"
+    },
+    {
+      "id": "kr-000660",
+      "provider": "krx",
+      "providerSymbol": "000660",
+      "providerExchange": "KRX",
+      "symbol": "000660.KS",
+      "returnBasis": "price_return"
+    },
+    {
+      "id": "index-gspc",
+      "providerSymbol": "SPX",
+      "providerExchange": "INDEX",
+      "leveragedProducts": {
+        "long2x": "etf-sso",
+        "inverse2x": "etf-sds"
+      },
+      "symbol": "^GSPC",
+      "returnBasis": "price_return"
+    },
+    {
+      "id": "index-ndx",
+      "providerSymbol": "NDX",
+      "providerExchange": "INDEX",
+      "leveragedProducts": {
+        "long2x": "etf-qld",
+        "inverse2x": "etf-qid"
+      },
+      "symbol": "^NDX",
+      "returnBasis": "price_return"
+    },
+    {
+      "id": "index-sox",
+      "providerSymbol": "SOX",
+      "providerExchange": "INDEX",
+      "leveragedProducts": {
+        "long2x": "etf-usd",
+        "inverse2x": "etf-ssg"
+      },
+      "symbol": "^SOX",
+      "returnBasis": "price_return"
+    },
+    {
+      "id": "stock-aapl",
+      "providerSymbol": "AAPL",
+      "providerExchange": "NASDAQ",
+      "symbol": "AAPL",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-msft",
+      "providerSymbol": "MSFT",
+      "providerExchange": "NASDAQ",
+      "symbol": "MSFT",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-nvda",
+      "providerSymbol": "NVDA",
+      "providerExchange": "NASDAQ",
+      "symbol": "NVDA",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-amzn",
+      "providerSymbol": "AMZN",
+      "providerExchange": "NASDAQ",
+      "symbol": "AMZN",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-googl",
+      "providerSymbol": "GOOGL",
+      "providerExchange": "NASDAQ",
+      "symbol": "GOOGL",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-meta",
+      "providerSymbol": "META",
+      "providerExchange": "NASDAQ",
+      "symbol": "META",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-tsla",
+      "providerSymbol": "TSLA",
+      "providerExchange": "NASDAQ",
+      "symbol": "TSLA",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-orcl",
+      "providerSymbol": "ORCL",
+      "providerExchange": "NYSE",
+      "symbol": "ORCL",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-crm",
+      "providerSymbol": "CRM",
+      "providerExchange": "NYSE",
+      "symbol": "CRM",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-nflx",
+      "providerSymbol": "NFLX",
+      "providerExchange": "NASDAQ",
+      "symbol": "NFLX",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-spcx",
+      "providerSymbol": "SPCX",
+      "providerExchange": "US",
+      "symbol": "SPCX",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-avgo",
+      "providerSymbol": "AVGO",
+      "providerExchange": "NASDAQ",
+      "symbol": "AVGO",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-tsm",
+      "providerSymbol": "TSM",
+      "providerExchange": "NYSE",
+      "symbol": "TSM",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-amd",
+      "providerSymbol": "AMD",
+      "providerExchange": "NASDAQ",
+      "symbol": "AMD",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-asml",
+      "providerSymbol": "ASML",
+      "providerExchange": "NASDAQ",
+      "symbol": "ASML",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-mu",
+      "providerSymbol": "MU",
+      "providerExchange": "NASDAQ",
+      "symbol": "MU",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-qcom",
+      "providerSymbol": "QCOM",
+      "providerExchange": "NASDAQ",
+      "symbol": "QCOM",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-txn",
+      "providerSymbol": "TXN",
+      "providerExchange": "NASDAQ",
+      "symbol": "TXN",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-adi",
+      "providerSymbol": "ADI",
+      "providerExchange": "NASDAQ",
+      "symbol": "ADI",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-arm",
+      "providerSymbol": "ARM",
+      "providerExchange": "NASDAQ",
+      "symbol": "ARM",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-mrvl",
+      "providerSymbol": "MRVL",
+      "providerExchange": "NASDAQ",
+      "symbol": "MRVL",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-mchp",
+      "providerSymbol": "MCHP",
+      "providerExchange": "NASDAQ",
+      "symbol": "MCHP",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-amat",
+      "providerSymbol": "AMAT",
+      "providerExchange": "NASDAQ",
+      "symbol": "AMAT",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-lrcx",
+      "providerSymbol": "LRCX",
+      "providerExchange": "NASDAQ",
+      "symbol": "LRCX",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-klac",
+      "providerSymbol": "KLAC",
+      "providerExchange": "NASDAQ",
+      "symbol": "KLAC",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-ter",
+      "providerSymbol": "TER",
+      "providerExchange": "NASDAQ",
+      "symbol": "TER",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-lite",
+      "providerSymbol": "LITE",
+      "providerExchange": "NASDAQ",
+      "symbol": "LITE",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-wdc",
+      "providerSymbol": "WDC",
+      "providerExchange": "NASDAQ",
+      "symbol": "WDC",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-sndk",
+      "providerSymbol": "SNDK",
+      "providerExchange": "NASDAQ",
+      "symbol": "SNDK",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-stx",
+      "providerSymbol": "STX",
+      "providerExchange": "NASDAQ",
+      "symbol": "STX",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "etf-spy",
+      "providerSymbol": "SPY",
+      "providerExchange": "NYSE ARCA",
+      "leveragedProducts": {
+        "long2x": "etf-sso",
+        "inverse2x": "etf-sds"
+      },
+      "symbol": "SPY",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "etf-qqq",
+      "providerSymbol": "QQQ",
+      "providerExchange": "NASDAQ",
+      "leveragedProducts": {
+        "long2x": "etf-qld",
+        "inverse2x": "etf-qid"
+      },
+      "symbol": "QQQ",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "etf-vti",
+      "providerSymbol": "VTI",
+      "providerExchange": "NYSE ARCA",
+      "symbol": "VTI",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "etf-iwm",
+      "providerSymbol": "IWM",
+      "providerExchange": "NYSE ARCA",
+      "symbol": "IWM",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "etf-smh",
+      "providerSymbol": "SMH",
+      "providerExchange": "NASDAQ",
+      "leveragedProducts": {
+        "long2x": "etf-usd",
+        "inverse2x": "etf-ssg"
+      },
+      "symbol": "SMH",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "etf-soxx",
+      "providerSymbol": "SOXX",
+      "providerExchange": "NASDAQ",
+      "leveragedProducts": {
+        "long2x": "etf-usd",
+        "inverse2x": "etf-ssg"
+      },
+      "symbol": "SOXX",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "etf-gld",
+      "providerSymbol": "GLD",
+      "providerExchange": "NYSE ARCA",
+      "symbol": "GLD",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "etf-tlt",
+      "providerSymbol": "TLT",
+      "providerExchange": "NASDAQ",
+      "symbol": "TLT",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "etf-sso",
+      "providerSymbol": "SSO",
+      "providerExchange": "NYSE ARCA",
+      "symbol": "SSO",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "etf-sds",
+      "providerSymbol": "SDS",
+      "providerExchange": "NYSE ARCA",
+      "symbol": "SDS",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "etf-qld",
+      "providerSymbol": "QLD",
+      "providerExchange": "NASDAQ",
+      "symbol": "QLD",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "etf-qid",
+      "providerSymbol": "QID",
+      "providerExchange": "NASDAQ",
+      "symbol": "QID",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "etf-usd",
+      "providerSymbol": "USD",
+      "providerExchange": "NYSE ARCA",
+      "symbol": "USD",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "etf-ssg",
+      "providerSymbol": "SSG",
+      "providerExchange": "NYSE ARCA",
+      "symbol": "SSG",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "fx-usd-krw",
+      "providerSymbol": "USD/KRW",
+      "providerExchange": "FX",
+      "symbol": "USD/KRW",
+      "returnBasis": "fx_rate"
+    }
+  ]
+}

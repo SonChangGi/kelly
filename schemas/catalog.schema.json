@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sonchanggi.github.io/kelly/schemas/catalog.schema.json",
+  "title": "Kelly asset catalog",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "contract",
+    "state",
+    "catalogVersion",
+    "generatedAt",
+    "assetCount",
+    "providerPolicy",
+    "assets"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "contract": { "const": "kelly-asset-catalog" },
+    "state": { "$ref": "#/$defs/state" },
+    "catalogVersion": { "type": "string", "minLength": 1 },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "assetCount": { "const": 50 },
+    "providerPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["providers", "normalizedOnly", "rawRedistribution", "rightsRequired"],
+      "properties": {
+        "providers": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "uniqueItems": true,
+          "items": { "type": "string", "enum": ["krx", "twelve_data"] }
+        },
+        "normalizedOnly": { "const": true },
+        "rawRedistribution": { "const": false },
+        "rightsRequired": { "const": true }
+      }
+    },
+    "assets": {
+      "type": "array",
+      "minItems": 50,
+      "maxItems": 50,
+      "items": { "$ref": "#/$defs/asset" }
+    }
+  },
+  "$defs": {
+    "state": {
+      "type": "string",
+      "enum": ["published", "live_api", "stale", "degraded", "unavailable", "ruin"]
+    },
+    "asset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "symbol",
+        "name",
+        "nameKo",
+        "assetType",
+        "exchange",
+        "currency",
+        "timezone",
+        "returnBasis",
+        "status",
+        "provider",
+        "searchTerms",
+        "dataPath"
+      ],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+        "symbol": { "type": "string", "minLength": 1, "maxLength": 24 },
+        "name": { "type": "string", "minLength": 1 },
+        "nameKo": { "type": "string", "minLength": 1 },
+        "assetType": { "type": "string", "enum": ["equity", "etf", "index", "fx"] },
+        "exchange": { "type": "string", "minLength": 1 },
+        "currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+        "timezone": { "type": "string", "minLength": 1 },
+        "returnBasis": {
+          "type": "string",
+          "enum": ["price_return", "total_return_approximation", "fx_rate"]
+        },
+        "status": { "$ref": "#/$defs/state" },
+        "provider": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["provider", "symbol", "exchange"],
+          "properties": {
+            "provider": { "type": "string", "enum": ["krx", "twelve_data"] },
+            "symbol": { "type": "string", "minLength": 1, "maxLength": 32 },
+            "exchange": { "type": "string", "minLength": 1 }
+          }
+        },
+        "leveragedProducts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["long2x", "inverse2x"],
+          "properties": {
+            "long2x": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+            "inverse2x": { "type": "string", "pattern": "^[a-z0-9-]+$" }
+          }
+        },
+        "searchTerms": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "dataPath": { "type": "string", "pattern": "^assets/[a-z0-9-]+\\.json$" }
+      }
+    }
+  }
+}

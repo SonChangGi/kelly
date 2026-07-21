@@ -1,0 +1,76 @@
+"""Kelly Allocation Lab calculation engine."""
+
+from .errors import KellyLabError, ReasonCode
+from .fx import FXAlignmentResult, align_fx_prior, convert_prices_to_base
+from .kelly import (
+    ExactKellyResult,
+    GrowthEvaluation,
+    SingleAssetKellyResult,
+    binomial_kelly_fraction,
+    exact_historical_kelly,
+    exact_kelly,
+    gbm_growth_rate,
+    gbm_kelly,
+    historical_log_growth,
+    single_asset_gbm_kelly,
+)
+from .metrics import (
+    CALENDAR_DAYS_PER_YEAR,
+    TRADING_DAYS_PER_YEAR,
+    PerformanceMetrics,
+    calculate_metrics,
+    maximum_drawdown,
+    performance_metrics,
+    wealth_index,
+)
+from .portfolio import (
+    MIN_COMMON_OBSERVATIONS,
+    CovarianceEstimate,
+    MultiAssetExactResult,
+    MultiAssetKellyResult,
+    covariance_from_correlation,
+    estimate_covariance,
+    multi_asset_exact_kelly,
+    multi_asset_gbm_kelly,
+    portfolio_kelly,
+    validate_correlation_matrix,
+)
+from .rebalance import REBALANCE_FREQUENCIES, RebalanceResult, simulate_rebalancing
+
+__all__ = [
+    "CALENDAR_DAYS_PER_YEAR",
+    "MIN_COMMON_OBSERVATIONS",
+    "REBALANCE_FREQUENCIES",
+    "TRADING_DAYS_PER_YEAR",
+    "CovarianceEstimate",
+    "ExactKellyResult",
+    "FXAlignmentResult",
+    "GrowthEvaluation",
+    "KellyLabError",
+    "MultiAssetExactResult",
+    "MultiAssetKellyResult",
+    "PerformanceMetrics",
+    "ReasonCode",
+    "RebalanceResult",
+    "SingleAssetKellyResult",
+    "align_fx_prior",
+    "binomial_kelly_fraction",
+    "calculate_metrics",
+    "convert_prices_to_base",
+    "covariance_from_correlation",
+    "estimate_covariance",
+    "exact_historical_kelly",
+    "exact_kelly",
+    "gbm_growth_rate",
+    "gbm_kelly",
+    "historical_log_growth",
+    "maximum_drawdown",
+    "multi_asset_exact_kelly",
+    "multi_asset_gbm_kelly",
+    "performance_metrics",
+    "portfolio_kelly",
+    "simulate_rebalancing",
+    "single_asset_gbm_kelly",
+    "validate_correlation_matrix",
+    "wealth_index",
+]

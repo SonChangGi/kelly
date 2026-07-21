@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "contract": "kelly-asset-history",
+  "state": "unavailable",
+  "assetId": "index-gspc",
+  "generatedAt": "2026-07-21T00:00:00+09:00",
+  "dataAsOf": null,
+  "metadata": {
+    "symbol": "^GSPC",
+    "assetType": "index",
+    "exchange": "INDEX",
+    "timezone": "America/New_York",
+    "returnBasis": "price_return",
+    "baseCurrency": "USD"
+  },
+  "dates": [],
+  "prices": [],
+  "returns": [],
+  "source": {
+    "provider": "none",
+    "normalized": true,
+    "rawRedistribution": false,
+    "license": "No provider observations published",
+    "attribution": "No market observations published",
+    "cachedAt": null
+  },
+  "limitations": [
+    "provider_rights_not_confirmed",
+    "server_secret_not_configured"
+  ]
+}

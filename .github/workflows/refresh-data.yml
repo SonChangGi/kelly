@@ -1,0 +1,41 @@
+name: Refresh validated market data
+
+on:
+  schedule:
+    - cron: "30 23 * * 1-5"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-data
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    if: vars.DATA_REFRESH_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    env:
+      TWELVE_DATA_API_KEY: ${{ secrets.TWELVE_DATA_API_KEY }}
+      TWELVE_DATA_EXTERNAL_DISPLAY_APPROVED: ${{ vars.TWELVE_DATA_EXTERNAL_DISPLAY_APPROVED }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v6
+      - name: Enforce provider-rights gate
+        run: |
+          test "$TWELVE_DATA_EXTERNAL_DISPLAY_APPROVED" = "true"
+          test -n "$TWELVE_DATA_API_KEY"
+      - run: uv sync --frozen
+      - name: Collect only through the normalized publisher
+        run: uv run python -m kelly_lab.refresh --catalog config/catalog.json
+      - run: uv run python -m kelly_lab.verify
+      - name: Commit validated public artifacts
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data
+          git diff --cached --quiet || git commit -m "data: refresh validated market series"
+          git push

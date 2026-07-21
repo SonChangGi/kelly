@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "contract": "quant-research-summary",
+  "projectId": "kelly",
+  "title": "Kelly Allocation Lab",
+  "state": "unavailable",
+  "generatedAt": "2026-07-21T00:00:00+09:00",
+  "dataAsOf": null,
+  "status": {
+    "state": "unavailable",
+    "label": "시장 데이터 연결 전",
+    "message": "공급자 이용 권리와 서버 측 API 비밀키가 확인되기 전에는 실데이터 결과를 게시하지 않습니다."
+  },
+  "coverage": {
+    "assetCount": 50,
+    "availableAssetCount": 0,
+    "frequency": "daily"
+  },
+  "primaryEntities": [
+    {
+      "id": "kelly-allocation-lab",
+      "name": "Kelly Allocation Lab",
+      "kind": "research",
+      "state": "unavailable",
+      "headlineMetrics": [
+        {
+          "id": "full-kelly",
+          "label": "풀 켈리 비중",
+          "value": null,
+          "unit": "fraction",
+          "state": "unavailable"
+        },
+        {
+          "id": "expected-log-growth",
+          "label": "기대 연 로그성장률",
+          "value": null,
+          "unit": "percent",
+          "state": "unavailable"
+        }
+      ],
+      "detailUrl": "./"
+    }
+  ],
+  "limitations": [
+    "정적 요약에는 검증된 시장 관측값이 아직 포함되지 않았습니다.",
+    "계산기는 사용자가 직접 입력한 가정과 실데이터 결과를 명확히 구분해야 합니다."
+  ]
+}

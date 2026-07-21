@@ -1,0 +1,1178 @@
+{
+  "schemaVersion": 1,
+  "contract": "kelly-asset-catalog",
+  "state": "published",
+  "catalogVersion": "2026-07-21-v2",
+  "generatedAt": "2026-07-21T00:00:00+09:00",
+  "assetCount": 50,
+  "providerPolicy": {
+    "providers": [
+      "krx",
+      "twelve_data"
+    ],
+    "normalizedOnly": true,
+    "rawRedistribution": false,
+    "rightsRequired": true
+  },
+  "assets": [
+    {
+      "id": "kr-005930",
+      "symbol": "005930.KS",
+      "name": "Samsung Electronics",
+      "nameKo": "삼성전자",
+      "assetType": "equity",
+      "exchange": "KRX",
+      "currency": "KRW",
+      "timezone": "Asia/Seoul",
+      "status": "unavailable",
+      "provider": {
+        "provider": "krx",
+        "symbol": "005930",
+        "exchange": "KRX"
+      },
+      "searchTerms": [
+        "삼성전자",
+        "samsung",
+        "005930.KS"
+      ],
+      "dataPath": "assets/kr-005930.json",
+      "returnBasis": "price_return"
+    },
+    {
+      "id": "kr-000660",
+      "symbol": "000660.KS",
+      "name": "SK hynix",
+      "nameKo": "SK하이닉스",
+      "assetType": "equity",
+      "exchange": "KRX",
+      "currency": "KRW",
+      "timezone": "Asia/Seoul",
+      "status": "unavailable",
+      "provider": {
+        "provider": "krx",
+        "symbol": "000660",
+        "exchange": "KRX"
+      },
+      "searchTerms": [
+        "SK하이닉스",
+        "sk hynix",
+        "000660.KS"
+      ],
+      "dataPath": "assets/kr-000660.json",
+      "returnBasis": "price_return"
+    },
+    {
+      "id": "index-gspc",
+      "symbol": "^GSPC",
+      "name": "S&P 500 Index",
+      "nameKo": "S&P 500 지수",
+      "assetType": "index",
+      "exchange": "INDEX",
+      "currency": "USD",
+      "timezone": "America/New_York",
+      "status": "unavailable",
+      "provider": {
+        "provider": "twelve_data",
+        "symbol": "SPX",
+        "exchange": "INDEX"
+      },
+      "leveragedProducts": {
+        "long2x": "etf-sso",
+        "inverse2x": "etf-sds"
+      },
+      "searchTerms": [
+        "S&P 500",
+        "^GSPC",
+        "SPX"
+      ],
+      "dataPath": "assets/index-gspc.json",
+      "returnBasis": "price_return"
+    },
+    {
+      "id": "index-ndx",
+      "symbol": "^NDX",
+      "name": "NASDAQ-100 Index",
+      "nameKo": "나스닥 100 지수",
+      "assetType": "index",
+      "exchange": "INDEX",
+      "currency": "USD",
+      "timezone": "America/New_York",
+      "status": "unavailable",
+      "provider": {
+        "provider": "twelve_data",
+        "symbol": "NDX",
+        "exchange": "INDEX"
+      },
+      "leveragedProducts": {
+        "long2x": "etf-qld",
+        "inverse2x": "etf-qid"
+      },
+      "searchTerms": [
+        "나스닥 100",
+        "^NDX",
+        "NDX"
+      ],
+      "dataPath": "assets/index-ndx.json",
+      "returnBasis": "price_return"
+    },
+    {
+      "id": "index-sox",
+      "symbol": "^SOX",
+      "name": "PHLX Semiconductor Sector Index",
+      "nameKo": "필라델피아 반도체지수",
+      "assetType": "index",
+      "exchange": "INDEX",
+      "currency": "USD",
+      "timezone": "America/New_York",
+      "status": "unavailable",
+      "provider": {
+        "provider": "twelve_data",
+        "symbol": "SOX",
+        "exchange": "INDEX"
+      },
+      "leveragedProducts": {
+        "long2x": "etf-usd",
+        "inverse2x": "etf-ssg"
+      },
+      "searchTerms": [
+        "필라델피아 반도체지수",
+        "^SOX",
+        "SOX"
+      ],
+      "dataPath": "assets/index-sox.json",
+      "returnBasis": "price_return"
+    },
+    {
+      "id": "stock-aapl",
+      "symbol": "AAPL",
+      "name": "Apple",
+      "nameKo": "애플",
+      "assetType": "equity",
+      "exchange": "NASDAQ",
+      "currency": "USD",
+      "timezone": "America/New_York",
+      "status": "unavailable",
+      "provider": {
+        "provider": "twelve_data",
+        "symbol": "AAPL",
+        "exchange": "NASDAQ"
+      },
+      "searchTerms": [
+        "애플",
+        "apple",
+        "AAPL"
+      ],
+      "dataPath": "assets/stock-aapl.json",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-msft",
+      "symbol": "MSFT",
+      "name": "Microsoft",
+      "nameKo": "마이크로소프트",
+      "assetType": "equity",
+      "exchange": "NASDAQ",
+      "currency": "USD",
+      "timezone": "America/New_York",
+      "status": "unavailable",
+      "provider": {
+        "provider": "twelve_data",
+        "symbol": "MSFT",
+        "exchange": "NASDAQ"
+      },
+      "searchTerms": [
+        "마이크로소프트",
+        "microsoft",
+        "MSFT"
+      ],
+      "dataPath": "assets/stock-msft.json",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-nvda",
+      "symbol": "NVDA",
+      "name": "NVIDIA",
+      "nameKo": "엔비디아",
+      "assetType": "equity",
+      "exchange": "NASDAQ",
+      "currency": "USD",
+      "timezone": "America/New_York",
+      "status": "unavailable",
+      "provider": {
+        "provider": "twelve_data",
+        "symbol": "NVDA",
+        "exchange": "NASDAQ"
+      },
+      "searchTerms": [
+        "엔비디아",
+        "nvidia",
+        "NVDA"
+      ],
+      "dataPath": "assets/stock-nvda.json",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-amzn",
+      "symbol": "AMZN",
+      "name": "Amazon",
+      "nameKo": "아마존",
+      "assetType": "equity",
+      "exchange": "NASDAQ",
+      "currency": "USD",
+      "timezone": "America/New_York",
+      "status": "unavailable",
+      "provider": {
+        "provider": "twelve_data",
+        "symbol": "AMZN",
+        "exchange": "NASDAQ"
+      },
+      "searchTerms": [
+        "아마존",
+        "amazon",
+        "AMZN"
+      ],
+      "dataPath": "assets/stock-amzn.json",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-googl",
+      "symbol": "GOOGL",
+      "name": "Alphabet Class A",
+      "nameKo": "알파벳 A",
+      "assetType": "equity",
+      "exchange": "NASDAQ",
+      "currency": "USD",
+      "timezone": "America/New_York",
+      "status": "unavailable",
+      "provider": {
+        "provider": "twelve_data",
+        "symbol": "GOOGL",
+        "exchange": "NASDAQ"
+      },
+      "searchTerms": [
+        "알파벳",
+        "google",
+        "GOOGL"
+      ],
+      "dataPath": "assets/stock-googl.json",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-meta",
+      "symbol": "META",
+      "name": "Meta Platforms",
+      "nameKo": "메타 플랫폼스",
+      "assetType": "equity",
+      "exchange": "NASDAQ",
+      "currency": "USD",
+      "timezone": "America/New_York",
+      "status": "unavailable",
+      "provider": {
+        "provider": "twelve_data",
+        "symbol": "META",
+        "exchange": "NASDAQ"
+      },
+      "searchTerms": [
+        "메타",
+        "meta",
+        "META"
+      ],
+      "dataPath": "assets/stock-meta.json",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-tsla",
+      "symbol": "TSLA",
+      "name": "Tesla",
+      "nameKo": "테슬라",
+      "assetType": "equity",
+      "exchange": "NASDAQ",
+      "currency": "USD",
+      "timezone": "America/New_York",
+      "status": "unavailable",
+      "provider": {
+        "provider": "twelve_data",
+        "symbol": "TSLA",
+        "exchange": "NASDAQ"
+      },
+      "searchTerms": [
+        "테슬라",
+        "tesla",
+        "TSLA"
+      ],
+      "dataPath": "assets/stock-tsla.json",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-orcl",
+      "symbol": "ORCL",
+      "name": "Oracle",
+      "nameKo": "오라클",
+      "assetType": "equity",
+      "exchange": "NYSE",
+      "currency": "USD",
+      "timezone": "America/New_York",
+      "status": "unavailable",
+      "provider": {
+        "provider": "twelve_data",
+        "symbol": "ORCL",
+        "exchange": "NYSE"
+      },
+      "searchTerms": [
+        "오라클",
+        "oracle",
+        "ORCL"
+      ],
+      "dataPath": "assets/stock-orcl.json",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-crm",
+      "symbol": "CRM",
+      "name": "Salesforce",
+      "nameKo": "세일즈포스",
+      "assetType": "equity",
+      "exchange": "NYSE",
+      "currency": "USD",
+      "timezone": "America/New_York",
+      "status": "unavailable",
+      "provider": {
+        "provider": "twelve_data",
+        "symbol": "CRM",
+        "exchange": "NYSE"
+      },
+      "searchTerms": [
+        "세일즈포스",
+        "salesforce",
+        "CRM"
+      ],
+      "dataPath": "assets/stock-crm.json",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-nflx",
+      "symbol": "NFLX",
+      "name": "Netflix",
+      "nameKo": "넷플릭스",
+      "assetType": "equity",
+      "exchange": "NASDAQ",
+      "currency": "USD",
+      "timezone": "America/New_York",
+      "status": "unavailable",
+      "provider": {
+        "provider": "twelve_data",
+        "symbol": "NFLX",
+        "exchange": "NASDAQ"
+      },
+      "searchTerms": [
+        "넷플릭스",
+        "netflix",
+        "NFLX"
+      ],
+      "dataPath": "assets/stock-nflx.json",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-spcx",
+      "symbol": "SPCX",
+      "name": "SPCX",
+      "nameKo": "SPCX",
+      "assetType": "equity",
+      "exchange": "US",
+      "currency": "USD",
+      "timezone": "America/New_York",
+      "status": "unavailable",
+      "provider": {
+        "provider": "twelve_data",
+        "symbol": "SPCX",
+        "exchange": "US"
+      },
+      "searchTerms": [
+        "SPCX"
+      ],
+      "dataPath": "assets/stock-spcx.json",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-avgo",
+      "symbol": "AVGO",
+      "name": "Broadcom",
+      "nameKo": "브로드컴",
+      "assetType": "equity",
+      "exchange": "NASDAQ",
+      "currency": "USD",
+      "timezone": "America/New_York",
+      "status": "unavailable",
+      "provider": {
+        "provider": "twelve_data",
+        "symbol": "AVGO",
+        "exchange": "NASDAQ"
+      },
+      "searchTerms": [
+        "브로드컴",
+        "broadcom",
+        "AVGO"
+      ],
+      "dataPath": "assets/stock-avgo.json",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-tsm",
+      "symbol": "TSM",
+      "name": "Taiwan Semiconductor Manufacturing",
+      "nameKo": "TSMC ADR",
+      "assetType": "equity",
+      "exchange": "NYSE",
+      "currency": "USD",
+      "timezone": "America/New_York",
+      "status": "unavailable",
+      "provider": {
+        "provider": "twelve_data",
+        "symbol": "TSM",
+        "exchange": "NYSE"
+      },
+      "searchTerms": [
+        "TSMC",
+        "taiwan semiconductor",
+        "TSM"
+      ],
+      "dataPath": "assets/stock-tsm.json",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-amd",
+      "symbol": "AMD",
+      "name": "Advanced Micro Devices",
+      "nameKo": "AMD",
+      "assetType": "equity",
+      "exchange": "NASDAQ",
+      "currency": "USD",
+      "timezone": "America/New_York",
+      "status": "unavailable",
+      "provider": {
+        "provider": "twelve_data",
+        "symbol": "AMD",
+        "exchange": "NASDAQ"
+      },
+      "searchTerms": [
+        "AMD",
+        "advanced micro devices"
+      ],
+      "dataPath": "assets/stock-amd.json",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-asml",
+      "symbol": "ASML",
+      "name": "ASML Holding",
+      "nameKo": "ASML",
+      "assetType": "equity",
+      "exchange": "NASDAQ",
+      "currency": "USD",
+      "timezone": "America/New_York",
+      "status": "unavailable",
+      "provider": {
+        "provider": "twelve_data",
+        "symbol": "ASML",
+        "exchange": "NASDAQ"
+      },
+      "searchTerms": [
+        "ASML",
+        "asml holding"
+      ],
+      "dataPath": "assets/stock-asml.json",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-mu",
+      "symbol": "MU",
+      "name": "Micron Technology",
+      "nameKo": "마이크론 테크놀로지",
+      "assetType": "equity",
+      "exchange": "NASDAQ",
+      "currency": "USD",
+      "timezone": "America/New_York",
+      "status": "unavailable",
+      "provider": {
+        "provider": "twelve_data",
+        "symbol": "MU",
+        "exchange": "NASDAQ"
+      },
+      "searchTerms": [
+        "마이크론",
+        "micron",
+        "MU"
+      ],
+      "dataPath": "assets/stock-mu.json",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-qcom",
+      "symbol": "QCOM",
+      "name": "Qualcomm",
+      "nameKo": "퀄컴",
+      "assetType": "equity",
+      "exchange": "NASDAQ",
+      "currency": "USD",
+      "timezone": "America/New_York",
+      "status": "unavailable",
+      "provider": {
+        "provider": "twelve_data",
+        "symbol": "QCOM",
+        "exchange": "NASDAQ"
+      },
+      "searchTerms": [
+        "퀄컴",
+        "qualcomm",
+        "QCOM"
+      ],
+      "dataPath": "assets/stock-qcom.json",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-txn",
+      "symbol": "TXN",
+      "name": "Texas Instruments",
+      "nameKo": "텍사스 인스트루먼트",
+      "assetType": "equity",
+      "exchange": "NASDAQ",
+      "currency": "USD",
+      "timezone": "America/New_York",
+      "status": "unavailable",
+      "provider": {
+        "provider": "twelve_data",
+        "symbol": "TXN",
+        "exchange": "NASDAQ"
+      },
+      "searchTerms": [
+        "텍사스 인스트루먼트",
+        "texas instruments",
+        "TXN"
+      ],
+      "dataPath": "assets/stock-txn.json",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-adi",
+      "symbol": "ADI",
+      "name": "Analog Devices",
+      "nameKo": "아날로그 디바이시스",
+      "assetType": "equity",
+      "exchange": "NASDAQ",
+      "currency": "USD",
+      "timezone": "America/New_York",
+      "status": "unavailable",
+      "provider": {
+        "provider": "twelve_data",
+        "symbol": "ADI",
+        "exchange": "NASDAQ"
+      },
+      "searchTerms": [
+        "아날로그 디바이시스",
+        "analog devices",
+        "ADI"
+      ],
+      "dataPath": "assets/stock-adi.json",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-arm",
+      "symbol": "ARM",
+      "name": "Arm Holdings",
+      "nameKo": "Arm 홀딩스",
+      "assetType": "equity",
+      "exchange": "NASDAQ",
+      "currency": "USD",
+      "timezone": "America/New_York",
+      "status": "unavailable",
+      "provider": {
+        "provider": "twelve_data",
+        "symbol": "ARM",
+        "exchange": "NASDAQ"
+      },
+      "searchTerms": [
+        "Arm 홀딩스",
+        "arm holdings",
+        "ARM"
+      ],
+      "dataPath": "assets/stock-arm.json",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-mrvl",
+      "symbol": "MRVL",
+      "name": "Marvell Technology",
+      "nameKo": "마벨 테크놀로지",
+      "assetType": "equity",
+      "exchange": "NASDAQ",
+      "currency": "USD",
+      "timezone": "America/New_York",
+      "status": "unavailable",
+      "provider": {
+        "provider": "twelve_data",
+        "symbol": "MRVL",
+        "exchange": "NASDAQ"
+      },
+      "searchTerms": [
+        "마벨",
+        "marvell",
+        "MRVL"
+      ],
+      "dataPath": "assets/stock-mrvl.json",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-mchp",
+      "symbol": "MCHP",
+      "name": "Microchip Technology",
+      "nameKo": "마이크로칩 테크놀로지",
+      "assetType": "equity",
+      "exchange": "NASDAQ",
+      "currency": "USD",
+      "timezone": "America/New_York",
+      "status": "unavailable",
+      "provider": {
+        "provider": "twelve_data",
+        "symbol": "MCHP",
+        "exchange": "NASDAQ"
+      },
+      "searchTerms": [
+        "마이크로칩",
+        "microchip",
+        "MCHP"
+      ],
+      "dataPath": "assets/stock-mchp.json",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-amat",
+      "symbol": "AMAT",
+      "name": "Applied Materials",
+      "nameKo": "어플라이드 머티어리얼즈",
+      "assetType": "equity",
+      "exchange": "NASDAQ",
+      "currency": "USD",
+      "timezone": "America/New_York",
+      "status": "unavailable",
+      "provider": {
+        "provider": "twelve_data",
+        "symbol": "AMAT",
+        "exchange": "NASDAQ"
+      },
+      "searchTerms": [
+        "어플라이드 머티어리얼즈",
+        "applied materials",
+        "AMAT"
+      ],
+      "dataPath": "assets/stock-amat.json",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-lrcx",
+      "symbol": "LRCX",
+      "name": "Lam Research",
+      "nameKo": "램리서치",
+      "assetType": "equity",
+      "exchange": "NASDAQ",
+      "currency": "USD",
+      "timezone": "America/New_York",
+      "status": "unavailable",
+      "provider": {
+        "provider": "twelve_data",
+        "symbol": "LRCX",
+        "exchange": "NASDAQ"
+      },
+      "searchTerms": [
+        "램리서치",
+        "lam research",
+        "LRCX"
+      ],
+      "dataPath": "assets/stock-lrcx.json",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-klac",
+      "symbol": "KLAC",
+      "name": "KLA",
+      "nameKo": "KLA",
+      "assetType": "equity",
+      "exchange": "NASDAQ",
+      "currency": "USD",
+      "timezone": "America/New_York",
+      "status": "unavailable",
+      "provider": {
+        "provider": "twelve_data",
+        "symbol": "KLAC",
+        "exchange": "NASDAQ"
+      },
+      "searchTerms": [
+        "KLA",
+        "KLAC"
+      ],
+      "dataPath": "assets/stock-klac.json",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-ter",
+      "symbol": "TER",
+      "name": "Teradyne",
+      "nameKo": "테라다인",
+      "assetType": "equity",
+      "exchange": "NASDAQ",
+      "currency": "USD",
+      "timezone": "America/New_York",
+      "status": "unavailable",
+      "provider": {
+        "provider": "twelve_data",
+        "symbol": "TER",
+        "exchange": "NASDAQ"
+      },
+      "searchTerms": [
+        "테라다인",
+        "teradyne",
+        "TER"
+      ],
+      "dataPath": "assets/stock-ter.json",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-lite",
+      "symbol": "LITE",
+      "name": "Lumentum Holdings",
+      "nameKo": "루멘텀 홀딩스",
+      "assetType": "equity",
+      "exchange": "NASDAQ",
+      "currency": "USD",
+      "timezone": "America/New_York",
+      "status": "unavailable",
+      "provider": {
+        "provider": "twelve_data",
+        "symbol": "LITE",
+        "exchange": "NASDAQ"
+      },
+      "searchTerms": [
+        "루멘텀",
+        "lumentum",
+        "LITE"
+      ],
+      "dataPath": "assets/stock-lite.json",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-wdc",
+      "symbol": "WDC",
+      "name": "Western Digital",
+      "nameKo": "웨스턴디지털",
+      "assetType": "equity",
+      "exchange": "NASDAQ",
+      "currency": "USD",
+      "timezone": "America/New_York",
+      "status": "unavailable",
+      "provider": {
+        "provider": "twelve_data",
+        "symbol": "WDC",
+        "exchange": "NASDAQ"
+      },
+      "searchTerms": [
+        "웨스턴디지털",
+        "western digital",
+        "WDC"
+      ],
+      "dataPath": "assets/stock-wdc.json",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-sndk",
+      "symbol": "SNDK",
+      "name": "Sandisk",
+      "nameKo": "샌디스크",
+      "assetType": "equity",
+      "exchange": "NASDAQ",
+      "currency": "USD",
+      "timezone": "America/New_York",
+      "status": "unavailable",
+      "provider": {
+        "provider": "twelve_data",
+        "symbol": "SNDK",
+        "exchange": "NASDAQ"
+      },
+      "searchTerms": [
+        "샌디스크",
+        "sandisk",
+        "SNDK"
+      ],
+      "dataPath": "assets/stock-sndk.json",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "stock-stx",
+      "symbol": "STX",
+      "name": "Seagate Technology",
+      "nameKo": "씨게이트 테크놀로지",
+      "assetType": "equity",
+      "exchange": "NASDAQ",
+      "currency": "USD",
+      "timezone": "America/New_York",
+      "status": "unavailable",
+      "provider": {
+        "provider": "twelve_data",
+        "symbol": "STX",
+        "exchange": "NASDAQ"
+      },
+      "searchTerms": [
+        "씨게이트",
+        "seagate",
+        "STX"
+      ],
+      "dataPath": "assets/stock-stx.json",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "etf-spy",
+      "symbol": "SPY",
+      "name": "SPDR S&P 500 ETF Trust",
+      "nameKo": "SPDR S&P 500 ETF",
+      "assetType": "etf",
+      "exchange": "NYSE ARCA",
+      "currency": "USD",
+      "timezone": "America/New_York",
+      "status": "unavailable",
+      "provider": {
+        "provider": "twelve_data",
+        "symbol": "SPY",
+        "exchange": "NYSE ARCA"
+      },
+      "leveragedProducts": {
+        "long2x": "etf-sso",
+        "inverse2x": "etf-sds"
+      },
+      "searchTerms": [
+        "S&P 500 ETF",
+        "SPY"
+      ],
+      "dataPath": "assets/etf-spy.json",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "etf-qqq",
+      "symbol": "QQQ",
+      "name": "Invesco QQQ Trust",
+      "nameKo": "인베스코 QQQ",
+      "assetType": "etf",
+      "exchange": "NASDAQ",
+      "currency": "USD",
+      "timezone": "America/New_York",
+      "status": "unavailable",
+      "provider": {
+        "provider": "twelve_data",
+        "symbol": "QQQ",
+        "exchange": "NASDAQ"
+      },
+      "leveragedProducts": {
+        "long2x": "etf-qld",
+        "inverse2x": "etf-qid"
+      },
+      "searchTerms": [
+        "나스닥 100 ETF",
+        "QQQ"
+      ],
+      "dataPath": "assets/etf-qqq.json",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "etf-vti",
+      "symbol": "VTI",
+      "name": "Vanguard Total Stock Market ETF",
+      "nameKo": "뱅가드 미국 전체시장 ETF",
+      "assetType": "etf",
+      "exchange": "NYSE ARCA",
+      "currency": "USD",
+      "timezone": "America/New_York",
+      "status": "unavailable",
+      "provider": {
+        "provider": "twelve_data",
+        "symbol": "VTI",
+        "exchange": "NYSE ARCA"
+      },
+      "searchTerms": [
+        "미국 전체시장 ETF",
+        "VTI"
+      ],
+      "dataPath": "assets/etf-vti.json",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "etf-iwm",
+      "symbol": "IWM",
+      "name": "iShares Russell 2000 ETF",
+      "nameKo": "아이셰어즈 러셀 2000 ETF",
+      "assetType": "etf",
+      "exchange": "NYSE ARCA",
+      "currency": "USD",
+      "timezone": "America/New_York",
+      "status": "unavailable",
+      "provider": {
+        "provider": "twelve_data",
+        "symbol": "IWM",
+        "exchange": "NYSE ARCA"
+      },
+      "searchTerms": [
+        "러셀 2000 ETF",
+        "IWM"
+      ],
+      "dataPath": "assets/etf-iwm.json",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "etf-smh",
+      "symbol": "SMH",
+      "name": "VanEck Semiconductor ETF",
+      "nameKo": "반에크 반도체 ETF",
+      "assetType": "etf",
+      "exchange": "NASDAQ",
+      "currency": "USD",
+      "timezone": "America/New_York",
+      "status": "unavailable",
+      "provider": {
+        "provider": "twelve_data",
+        "symbol": "SMH",
+        "exchange": "NASDAQ"
+      },
+      "leveragedProducts": {
+        "long2x": "etf-usd",
+        "inverse2x": "etf-ssg"
+      },
+      "searchTerms": [
+        "반도체 ETF",
+        "SMH"
+      ],
+      "dataPath": "assets/etf-smh.json",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "etf-soxx",
+      "symbol": "SOXX",
+      "name": "iShares Semiconductor ETF",
+      "nameKo": "아이셰어즈 반도체 ETF",
+      "assetType": "etf",
+      "exchange": "NASDAQ",
+      "currency": "USD",
+      "timezone": "America/New_York",
+      "status": "unavailable",
+      "provider": {
+        "provider": "twelve_data",
+        "symbol": "SOXX",
+        "exchange": "NASDAQ"
+      },
+      "leveragedProducts": {
+        "long2x": "etf-usd",
+        "inverse2x": "etf-ssg"
+      },
+      "searchTerms": [
+        "반도체 ETF",
+        "SOXX"
+      ],
+      "dataPath": "assets/etf-soxx.json",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "etf-gld",
+      "symbol": "GLD",
+      "name": "SPDR Gold Shares",
+      "nameKo": "SPDR 금 ETF",
+      "assetType": "etf",
+      "exchange": "NYSE ARCA",
+      "currency": "USD",
+      "timezone": "America/New_York",
+      "status": "unavailable",
+      "provider": {
+        "provider": "twelve_data",
+        "symbol": "GLD",
+        "exchange": "NYSE ARCA"
+      },
+      "searchTerms": [
+        "금 ETF",
+        "GLD"
+      ],
+      "dataPath": "assets/etf-gld.json",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "etf-tlt",
+      "symbol": "TLT",
+      "name": "iShares 20+ Year Treasury Bond ETF",
+      "nameKo": "아이셰어즈 미국 장기국채 ETF",
+      "assetType": "etf",
+      "exchange": "NASDAQ",
+      "currency": "USD",
+      "timezone": "America/New_York",
+      "status": "unavailable",
+      "provider": {
+        "provider": "twelve_data",
+        "symbol": "TLT",
+        "exchange": "NASDAQ"
+      },
+      "searchTerms": [
+        "미국 장기국채 ETF",
+        "TLT"
+      ],
+      "dataPath": "assets/etf-tlt.json",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "etf-sso",
+      "symbol": "SSO",
+      "name": "ProShares Ultra S&P500",
+      "nameKo": "프로셰어즈 S&P 500 2배",
+      "assetType": "etf",
+      "exchange": "NYSE ARCA",
+      "currency": "USD",
+      "timezone": "America/New_York",
+      "status": "unavailable",
+      "provider": {
+        "provider": "twelve_data",
+        "symbol": "SSO",
+        "exchange": "NYSE ARCA"
+      },
+      "searchTerms": [
+        "S&P 500 2배",
+        "SSO"
+      ],
+      "dataPath": "assets/etf-sso.json",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "etf-sds",
+      "symbol": "SDS",
+      "name": "ProShares UltraShort S&P500",
+      "nameKo": "프로셰어즈 S&P 500 인버스 2배",
+      "assetType": "etf",
+      "exchange": "NYSE ARCA",
+      "currency": "USD",
+      "timezone": "America/New_York",
+      "status": "unavailable",
+      "provider": {
+        "provider": "twelve_data",
+        "symbol": "SDS",
+        "exchange": "NYSE ARCA"
+      },
+      "searchTerms": [
+        "S&P 500 인버스 2배",
+        "SDS"
+      ],
+      "dataPath": "assets/etf-sds.json",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "etf-qld",
+      "symbol": "QLD",
+      "name": "ProShares Ultra QQQ",
+      "nameKo": "프로셰어즈 나스닥 100 2배",
+      "assetType": "etf",
+      "exchange": "NASDAQ",
+      "currency": "USD",
+      "timezone": "America/New_York",
+      "status": "unavailable",
+      "provider": {
+        "provider": "twelve_data",
+        "symbol": "QLD",
+        "exchange": "NASDAQ"
+      },
+      "searchTerms": [
+        "나스닥 100 2배",
+        "QLD"
+      ],
+      "dataPath": "assets/etf-qld.json",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "etf-qid",
+      "symbol": "QID",
+      "name": "ProShares UltraShort QQQ",
+      "nameKo": "프로셰어즈 나스닥 100 인버스 2배",
+      "assetType": "etf",
+      "exchange": "NASDAQ",
+      "currency": "USD",
+      "timezone": "America/New_York",
+      "status": "unavailable",
+      "provider": {
+        "provider": "twelve_data",
+        "symbol": "QID",
+        "exchange": "NASDAQ"
+      },
+      "searchTerms": [
+        "나스닥 100 인버스 2배",
+        "QID"
+      ],
+      "dataPath": "assets/etf-qid.json",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "etf-usd",
+      "symbol": "USD",
+      "name": "ProShares Ultra Semiconductors",
+      "nameKo": "프로셰어즈 반도체 2배",
+      "assetType": "etf",
+      "exchange": "NYSE ARCA",
+      "currency": "USD",
+      "timezone": "America/New_York",
+      "status": "unavailable",
+      "provider": {
+        "provider": "twelve_data",
+        "symbol": "USD",
+        "exchange": "NYSE ARCA"
+      },
+      "searchTerms": [
+        "반도체 2배",
+        "USD ETF"
+      ],
+      "dataPath": "assets/etf-usd.json",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "etf-ssg",
+      "symbol": "SSG",
+      "name": "ProShares UltraShort Semiconductors",
+      "nameKo": "프로셰어즈 반도체 인버스 2배",
+      "assetType": "etf",
+      "exchange": "NYSE ARCA",
+      "currency": "USD",
+      "timezone": "America/New_York",
+      "status": "unavailable",
+      "provider": {
+        "provider": "twelve_data",
+        "symbol": "SSG",
+        "exchange": "NYSE ARCA"
+      },
+      "searchTerms": [
+        "반도체 인버스 2배",
+        "SSG"
+      ],
+      "dataPath": "assets/etf-ssg.json",
+      "returnBasis": "total_return_approximation"
+    },
+    {
+      "id": "fx-usd-krw",
+      "symbol": "USD/KRW",
+      "name": "US Dollar / Korean Won",
+      "nameKo": "미국 달러/원 환율",
+      "assetType": "fx",
+      "exchange": "FX",
+      "currency": "KRW",
+      "timezone": "UTC",
+      "status": "unavailable",
+      "provider": {
+        "provider": "twelve_data",
+        "symbol": "USD/KRW",
+        "exchange": "FX"
+      },
+      "searchTerms": [
+        "달러 원",
+        "USD/KRW",
+        "환율"
+      ],
+      "dataPath": "assets/fx-usd-krw.json",
+      "returnBasis": "fx_rate"
+    }
+  ]
+}
