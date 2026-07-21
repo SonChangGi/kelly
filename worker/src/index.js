@@ -38,7 +38,10 @@ for (const asset of CATALOG) {
 
 const MAX_SYMBOLS = 5;
 const MAX_POINTS = 5000;
-const MAX_DAYS = 366 * 20;
+const MAX_RANGE_YEARS = 5;
+const MAX_END_LAG_DAYS = 10;
+const SPECIAL_EXCHANGES = new Set(["INDEX", "FX", "US"]);
+const US_EXCHANGES = new Set(["AMEX", "BATS", "CBOE", "NASDAQ", "NYSE", "NYSEARCA", "US"]);
 
 function isoNow() {
   return new Date().toISOString();
@@ -89,6 +92,48 @@ function configured(env) {
   return Boolean(env.TWELVE_DATA_API_KEY) && env.TWELVE_DATA_RIGHTS_APPROVED === "true";
 }
 
+function identityToken(value) {
+  return String(value || "").toUpperCase().replaceAll(/[^A-Z0-9]/g, "");
+}
+
+function providerFailure(reasonCode, state = "degraded", httpStatus = 502) {
+  const failure = new Error(reasonCode);
+  failure.reasonCode = reasonCode;
+  failure.state = state;
+  failure.httpStatus = httpStatus;
+  return failure;
+}
+
+function validateProviderIdentity(asset, meta) {
+  if (!meta || typeof meta !== "object" || Array.isArray(meta)) {
+    throw providerFailure("provider_identity_metadata_missing");
+  }
+  if (identityToken(meta.symbol) !== identityToken(asset.providerSymbol)) {
+    throw providerFailure("provider_identity_symbol_mismatch");
+  }
+
+  const expectedExchange = identityToken(asset.exchange);
+  const actualExchange = identityToken(meta.exchange);
+  const providerType = identityToken(meta.type);
+  if (!SPECIAL_EXCHANGES.has(expectedExchange) && actualExchange !== expectedExchange) {
+    throw providerFailure("provider_identity_exchange_mismatch");
+  }
+  if (expectedExchange === "US" && !US_EXCHANGES.has(actualExchange)) {
+    throw providerFailure("provider_identity_exchange_mismatch");
+  }
+  if (expectedExchange === "INDEX" && actualExchange !== "INDEX" && !providerType.includes("INDEX")) {
+    throw providerFailure("provider_identity_exchange_mismatch");
+  }
+  if (expectedExchange === "FX") {
+    const isFx = ["FX", "FOREX"].includes(actualExchange)
+      || ["CURRENCY", "FOREX", "FX"].some((token) => providerType.includes(token));
+    if (!isFx) throw providerFailure("provider_identity_exchange_mismatch");
+  }
+  if (asset.assetType !== "fx" && identityToken(meta.currency) !== identityToken(asset.currency)) {
+    throw providerFailure("provider_identity_currency_mismatch");
+  }
+}
+
 function resolveAssets(value) {
   const tokens = (value || "").split(",").map((item) => item.trim()).filter(Boolean);
   if (!tokens.length || tokens.length > MAX_SYMBOLS) return null;
@@ -99,17 +144,16 @@ function resolveAssets(value) {
 function validateRange(url) {
   const start = parseDate(url.searchParams.get("start"));
   const end = parseDate(url.searchParams.get("end"));
-  if (!start || !end || start > end || (end - start) / 86400000 > MAX_DAYS) return null;
+  if (!start || !end || start > end) return null;
+  const maximumEnd = new Date(start);
+  maximumEnd.setUTCFullYear(maximumEnd.getUTCFullYear() + MAX_RANGE_YEARS);
+  if (end > maximumEnd) return null;
   return { start: url.searchParams.get("start"), end: url.searchParams.get("end") };
 }
 
 async function providerSeries(asset, range, env) {
   if (asset.provider !== "twelve_data") {
-    const failure = new Error("provider_not_available");
-    failure.reasonCode = "provider_not_available";
-    failure.state = "unavailable";
-    failure.httpStatus = 503;
-    throw failure;
+    throw providerFailure("provider_not_available", "unavailable", 503);
   }
   const upstream = new URL("https://api.twelvedata.com/time_series");
   upstream.searchParams.set("symbol", asset.providerSymbol);
@@ -127,20 +171,15 @@ async function providerSeries(asset, range, env) {
       headers: { Authorization: `apikey ${env.TWELVE_DATA_API_KEY}` },
     });
   } catch {
-    const failure = new Error("provider_network_failure");
-    failure.reasonCode = "provider_network_failure";
-    failure.state = "degraded";
-    failure.httpStatus = 502;
-    throw failure;
+    throw providerFailure("provider_network_failure");
   }
   if (!response.ok) {
-    const failure = new Error("provider_request_failed");
-    failure.reasonCode = [401, 403, 404].includes(response.status)
+    const reasonCode = [401, 403, 404].includes(response.status)
       ? "provider_access_unavailable"
       : response.status === 429 ? "provider_rate_limited" : "provider_request_failed";
-    failure.state = [401, 403, 404].includes(response.status) ? "unavailable" : "degraded";
-    failure.httpStatus = response.status === 429 ? 429 : response.status < 500 ? 503 : 502;
-    throw failure;
+    const state = [401, 403, 404].includes(response.status) ? "unavailable" : "degraded";
+    const httpStatus = response.status === 429 ? 429 : response.status < 500 ? 503 : 502;
+    throw providerFailure(reasonCode, state, httpStatus);
   }
   let payload;
   try {
@@ -149,24 +188,30 @@ async function providerSeries(asset, range, env) {
     payload = null;
   }
   if (!payload || !Array.isArray(payload.values)) {
-    const failure = new Error("provider_payload_invalid");
-    failure.reasonCode = "provider_payload_invalid";
-    failure.state = "degraded";
-    failure.httpStatus = 502;
-    throw failure;
+    throw providerFailure("provider_payload_invalid");
   }
+  validateProviderIdentity(asset, payload.meta);
+  if (payload.values.length >= MAX_POINTS) throw providerFailure("provider_result_truncated");
+
   const points = [];
-  for (const value of payload.values.slice(0, MAX_POINTS)) {
+  const seenDates = new Set();
+  for (const value of payload.values) {
     const date = String(value.datetime || "").slice(0, 10);
     const close = Number(value.close);
-    if (parseDate(date) && Number.isFinite(close) && close > 0) points.push([date, close]);
+    if (!parseDate(date) || date < range.start || date > range.end
+      || !Number.isFinite(close) || close <= 0 || seenDates.has(date)) {
+      throw providerFailure("provider_payload_invalid");
+    }
+    seenDates.add(date);
+    points.push([date, close]);
   }
   if (!points.length) {
-    const failure = new Error("series_unavailable");
-    failure.reasonCode = "series_unavailable";
-    failure.state = "unavailable";
-    failure.httpStatus = 404;
-    throw failure;
+    throw providerFailure("series_unavailable", "unavailable", 404);
+  }
+  points.sort(([left], [right]) => left.localeCompare(right));
+  const endLagDays = (parseDate(range.end) - parseDate(points.at(-1)[0])) / 86400000;
+  if (endLagDays < 0 || endLagDays > MAX_END_LAG_DAYS) {
+    throw providerFailure("provider_end_coverage_insufficient");
   }
   return points;
 }
@@ -177,10 +222,19 @@ function normalizedDocument(assets, series, fxPair = null) {
     const byDate = new Map(points);
     return dates.map((date) => byDate.get(date) ?? null);
   });
-  const returns = prices.map((row) => row.map((price, index) => {
-    if (index === 0 || price === null || row[index - 1] === null) return null;
-    return price / row[index - 1] - 1;
-  }));
+  const returns = prices.map((row) => {
+    let previous = null;
+    return row.map((price) => {
+      if (price === null) return null;
+      if (previous === null) {
+        previous = price;
+        return null;
+      }
+      const result = price / previous - 1;
+      previous = price;
+      return result;
+    });
+  });
   const dataAsOf = dates.at(-1) || null;
   return {
     schemaVersion: 1,
@@ -203,23 +257,34 @@ function normalizedDocument(assets, series, fxPair = null) {
       normalized: true,
       rawRedistribution: false,
       frequency: "daily",
-      priceField: "adjusted_close",
+      priceField: "close",
       license: "external_display_approved",
       cachedAt: isoNow(),
-      attribution: "Normalized from Twelve Data server-side response",
+      attribution: "Data provided by Twelve Data",
     },
     limitations: ["Daily close series; dividends, fees, taxes, slippage, and financing are not guaranteed."],
   };
 }
 
-async function cachedNormalized(request, ctx, producer) {
+function originCacheRequest(request, origin) {
+  const cacheUrl = new URL(request.url);
+  cacheUrl.searchParams.set("__kelly_cache_origin", origin || "no-origin");
+  return new Request(cacheUrl.toString(), { method: "GET" });
+}
+
+async function cachedNormalized(request, origin, ctx, producer) {
   const cache = globalThis.caches?.default;
+  const cacheRequest = originCacheRequest(request, origin);
   if (cache) {
-    const hit = await cache.match(request);
+    const hit = await cache.match(cacheRequest);
     if (hit) return hit;
   }
   const response = await producer();
-  if (cache && response.ok) ctx?.waitUntil?.(cache.put(request, response.clone()));
+  if (cache && response.ok) {
+    const write = cache.put(cacheRequest, response.clone());
+    if (typeof ctx?.waitUntil === "function") ctx.waitUntil(write);
+    else await write;
+  }
   return response;
 }
 
@@ -259,7 +324,10 @@ async function route(request, env, ctx, origin) {
     assets = resolveAssets(url.searchParams.get("symbols"));
     if (!assets) return json(errorBody("unavailable", "symbols_not_allowlisted"), 400, origin);
   }
-  return cachedNormalized(request, ctx, async () => {
+  if (assets.some((asset) => asset.provider !== "twelve_data")) {
+    return json(errorBody("unavailable", "provider_not_available"), 503, origin);
+  }
+  return cachedNormalized(request, origin, ctx, async () => {
     try {
       const series = await Promise.all(assets.map((asset) => providerSeries(asset, range, env)));
       return json(normalizedDocument(assets, series, fxPair), 200, origin, "public, max-age=300, s-maxage=3600");

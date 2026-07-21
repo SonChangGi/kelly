@@ -67,6 +67,8 @@
         "provider",
         "searchTerms",
         "dataPath"
+        ,"availableFrom"
+        ,"availableTo"
       ],
       "properties": {
         "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
@@ -107,6 +109,18 @@
           "items": { "type": "string", "minLength": 1 }
         },
         "dataPath": { "type": "string", "pattern": "^assets/[a-z0-9-]+\\.json$" }
+        ,"availableFrom": {
+          "oneOf": [
+            { "type": "string", "format": "date" },
+            { "type": "null" }
+          ]
+        }
+        ,"availableTo": {
+          "oneOf": [
+            { "type": "string", "format": "date" },
+            { "type": "null" }
+          ]
+        }
       }
     }
   }

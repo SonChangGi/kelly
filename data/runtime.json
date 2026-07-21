@@ -1,0 +1,5 @@
+{
+  "schemaVersion": 1,
+  "contract": "kelly-runtime-config",
+  "workerBaseUrl": null
+}

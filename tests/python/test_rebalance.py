@@ -92,3 +92,42 @@ def test_fee_matches_actual_post_fee_target_notional() -> None:
     actual_traded_notional = abs(0.5 * post_fee_nav - 0.60) + abs(0.5 * post_fee_nav - 0.50)
     assert isclose(result.trading_cost_paid, 0.001 * actual_traded_notional, rel_tol=1e-10)
     assert result.net_weight_path[1] == [0.50, 0.50]
+
+
+def test_final_observation_does_not_trigger_a_terminal_rebalance() -> None:
+    result = simulate_rebalancing(
+        [[0.0, 0.0], [0.20, 0.0]],
+        [0.50, 0.50],
+        dates=["2024-01-02", "2024-01-03"],
+        frequency="daily",
+        one_way_cost_bps=10,
+    )
+
+    assert result.trading_cost_paid == 0.0
+    assert result.total_turnover == 0.0
+    assert result.net_weight_path[-1][0] > 0.50
+
+
+def test_n_return_dates_use_observation_count_for_cagr() -> None:
+    result = simulate_rebalancing(
+        [[0.20, 0.0], [0.0, 0.0]],
+        [0.50, 0.50],
+        dates=["2024-01-02", "2024-01-03"],
+        frequency="none",
+        one_way_cost_bps=0,
+    )
+
+    expected = result.buy_and_hold_wealth[-1] ** (252 / 2) - 1
+    assert isclose(result.buy_and_hold_cagr, expected, rel_tol=1e-12)
+
+
+def test_n_plus_one_dates_use_full_calendar_span_for_rebalancing_cagr() -> None:
+    result = simulate_rebalancing(
+        [[0.10]],
+        [1.0],
+        dates=["2023-01-01", "2024-01-01"],
+        frequency="none",
+    )
+
+    expected = 1.10 ** (365.2425 / 365) - 1
+    assert isclose(result.buy_and_hold_cagr, expected, rel_tol=1e-12)

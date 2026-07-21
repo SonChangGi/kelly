@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sonchanggi.github.io/kelly/schemas/provider-catalog-config.schema.json",
+  "title": "Kelly provider catalog configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "contract",
+    "catalogVersion",
+    "defaultProvider",
+    "assets"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "contract": { "const": "kelly-provider-catalog-config" },
+    "catalogVersion": { "type": "string", "minLength": 1 },
+    "defaultProvider": { "type": "string", "enum": ["twelve_data"] },
+    "assets": {
+      "type": "array",
+      "minItems": 50,
+      "maxItems": 50,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "providerSymbol",
+          "providerExchange",
+          "symbol",
+          "returnBasis"
+        ],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+          "provider": { "type": "string", "enum": ["krx", "twelve_data"] },
+          "providerSymbol": { "type": "string", "minLength": 1, "maxLength": 32 },
+          "providerExchange": { "type": "string", "minLength": 1 },
+          "symbol": { "type": "string", "minLength": 1, "maxLength": 24 },
+          "returnBasis": {
+            "type": "string",
+            "enum": ["price_return", "total_return_approximation", "fx_rate"]
+          },
+          "leveragedProducts": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["long2x", "inverse2x"],
+            "properties": {
+              "long2x": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+              "inverse2x": { "type": "string", "pattern": "^[a-z0-9-]+$" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

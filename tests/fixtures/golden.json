@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "gbm": {
     "inputs": {
       "expectedExcessReturn": 0.06,
@@ -35,6 +35,121 @@
   "ruin": {
     "returns": [-0.6],
     "leverage": 2.0,
+    "expectedStatus": "ruin"
+  },
+  "exactHistorical": {
+    "inputs": {
+      "returnPattern": [0.012, -0.009],
+      "repetitions": 100,
+      "riskFreeRate": 0.05,
+      "borrowingSpread": 0.1,
+      "annualizationDays": 252,
+      "cap": 3.0,
+      "searchCap": 100.0
+    },
+    "expected": {
+      "status": "published",
+      "theoreticalFraction": 8.648405283479914,
+      "appliedFraction": 3.0,
+      "annualLogGrowth": 1.1650302763198057,
+      "appliedAnnualLogGrowth": 0.728712197802581,
+      "appliedAnnualGrowth": 1.0724100342619736
+    }
+  },
+  "multiAssetGbm": {
+    "inputs": {
+      "expectedExcessReturns": [0.2, 0.16],
+      "volatilities": [0.2, 0.2],
+      "correlation": [[1.0, 0.0], [0.0, 1.0]],
+      "riskFreeRate": 0.0,
+      "borrowingSpread": 0.0,
+      "cap": 3.0,
+      "commonObservations": 100
+    },
+    "expected": {
+      "status": "published",
+      "theoreticalWeights": [5.0, 4.0],
+      "theoreticalTotalExposure": 9.0,
+      "theoreticalAnnualLogGrowth": 0.82,
+      "appliedWeights": [2.0, 1.0],
+      "appliedTotalExposure": 3.0,
+      "appliedAnnualLogGrowth": 0.46,
+      "appliedAnnualGrowth": 0.5840739849944818
+    }
+  },
+  "singularMultiAssetGbm": {
+    "inputs": {
+      "expectedExcessReturns": [0.06, 0.06],
+      "volatilities": [0.2, 0.2],
+      "correlation": [[1.0, 1.0], [1.0, 1.0]],
+      "riskFreeRate": 0.0,
+      "borrowingSpread": 0.0,
+      "cap": 3.0,
+      "commonObservations": 100
+    },
+    "expected": {
+      "status": "degraded",
+      "reason": "singular_covariance",
+      "theoreticalWeights": null,
+      "theoreticalTotalExposure": null,
+      "theoreticalAnnualLogGrowth": null,
+      "appliedWeights": [0.75, 0.75],
+      "appliedTotalExposure": 1.5,
+      "appliedAnnualLogGrowth": 0.045,
+      "appliedAnnualGrowth": 0.04602785990871691
+    }
+  },
+  "fxPrior": {
+    "inputs": {
+      "assetDates": ["2024-01-05", "2024-01-10", "2024-01-12"],
+      "assetPrices": [100.0, 102.0, 101.0],
+      "fxDates": ["2024-01-05", "2024-01-11"],
+      "fxRates": [1300.0, 1310.0],
+      "maxLagDays": 5
+    },
+    "expected": {
+      "status": "published",
+      "alignedRates": [1300.0, 1300.0, 1310.0],
+      "sourceDates": ["2024-01-05", "2024-01-05", "2024-01-11"],
+      "lagDays": [0, 5, 1],
+      "convertedPrices": [130000.0, 132600.0, 132310.0]
+    }
+  },
+  "rebalancing": {
+    "inputs": {
+      "dates": ["2024-01-01", "2024-05-01", "2024-09-01", "2025-01-01"],
+      "returnsMatrix": [[0.2, 0.0], [0.0, 0.1], [0.05, -0.02]],
+      "targetWeights": [1.2, 0.4],
+      "frequency": "daily",
+      "oneWayCostBps": 100.0,
+      "riskFreeRate": 0.02,
+      "borrowingSpread": 0.01,
+      "annualizationDays": 252
+    },
+    "expected": {
+      "status": "published",
+      "buyAndHoldWealth": [1.0, 1.2399296177716992, 1.2798592272873017, 1.3429888285458391],
+      "grossWealth": [1.0, 1.2399296177716992, 1.2894395334731321, 1.35639963558611],
+      "netWealth": [1.0, 1.2385134033186018, 1.2870828095074023, 1.3539205278456468],
+      "grossRebalancingEffect": 0.013374747576749502,
+      "tradingCostDrag": 0.002472421124496693,
+      "netRebalancingEffect": 0.010902326452252808,
+      "turnover": 0.1828495788437668,
+      "tradingCostPaid": 0.002300175063934873,
+      "rebalanceCount": 2
+    }
+  },
+  "rebalancingRuin": {
+    "inputs": {
+      "dates": ["2024-01-01", "2024-01-02"],
+      "returnsMatrix": [[-1.1, 0.0]],
+      "targetWeights": [0.1, 0.9],
+      "frequency": "none",
+      "oneWayCostBps": 0.0,
+      "riskFreeRate": 0.0,
+      "borrowingSpread": 0.0,
+      "annualizationDays": 252
+    },
     "expectedStatus": "ruin"
   }
 }

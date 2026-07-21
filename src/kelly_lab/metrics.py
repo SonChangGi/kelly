@@ -62,6 +62,25 @@ def annual_rate_to_periodic(rate: float, periods: int = TRADING_DAYS_PER_YEAR) -
     return (1.0 + rate) ** (1.0 / periods) - 1.0
 
 
+def annual_borrowing_spread_to_periodic(
+    risk_free_rate: float,
+    borrowing_spread: float,
+    periods: int = TRADING_DAYS_PER_YEAR,
+) -> float:
+    """Convert an additive annual borrowing spread into periodic financing drag."""
+
+    risk_free_rate = float(risk_free_rate)
+    borrowing_spread = float(borrowing_spread)
+    if borrowing_spread < 0 or risk_free_rate + borrowing_spread <= -1:
+        raise KellyLabError(
+            ReasonCode.INVALID_RATE,
+            "borrowing spread must be non-negative and total borrowing rate greater than -1",
+        )
+    return annual_rate_to_periodic(
+        risk_free_rate + borrowing_spread, periods
+    ) - annual_rate_to_periodic(risk_free_rate, periods)
+
+
 def wealth_index(returns: Iterable[float], *, initial: float = 1.0) -> list[float]:
     """Return wealth including the initial observation.
 
@@ -190,6 +209,7 @@ def calculate_metrics(
     mdd = maximum_drawdown(wealth)
 
     parsed_dates: list[date] | None = None
+    dates_include_initial_observation = False
     if dates is not None:
         if len(dates) not in (n, n + 1):
             raise KellyLabError(
@@ -197,12 +217,16 @@ def calculate_metrics(
                 "dates must contain one date per return or the preferred N+1 price dates",
             )
         parsed_dates = [_date(value) for value in dates]
+        dates_include_initial_observation = len(parsed_dates) == n + 1
         if any(right <= left for left, right in zip(parsed_dates, parsed_dates[1:], strict=False)):
             raise KellyLabError(ReasonCode.INVALID_DATES, "dates must be strictly increasing")
 
     cagr: float | None = None
     if parsed_dates is None:
         reasons["cagr"] = ReasonCode.INSUFFICIENT_OBSERVATIONS.value
+    elif not dates_include_initial_observation:
+        years = n / annualization
+        cagr = wealth[-1] ** (1.0 / years) - 1.0
     else:
         elapsed_days = (parsed_dates[-1] - parsed_dates[0]).days
         if elapsed_days <= 0:

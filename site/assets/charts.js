@@ -11,7 +11,7 @@ function palette() {
     muted: dark ? "#9eb0bd" : "#667782",
     grid: dark ? "#273944" : "#e6ecef",
     panel: dark ? "#101c23" : "#ffffff",
-    blue: "#176b87",
+    blue: dark ? "#68a8c1" : "#176b87",
     blueLight: dark ? "rgba(34, 139, 176, .18)" : "rgba(23, 107, 135, .12)",
     gold: "#c58b24",
     orange: "#bd6429",
@@ -38,6 +38,7 @@ function baseOption(title, subtitle = "") {
   const colors = palette();
   return {
     animationDuration: 350,
+    aria: { enabled: true, decal: { show: true } },
     backgroundColor: "transparent",
     color: [colors.blue, colors.gold, colors.olive, colors.pink, colors.orange],
     title: {
@@ -74,6 +75,16 @@ function baseOption(title, subtitle = "") {
       splitLine: { lineStyle: { color: colors.grid } },
     },
   };
+}
+
+export function clearChart(element, title = "계산 결과 없음", subtitle = "유효한 입력을 적용하면 차트가 표시됩니다.") {
+  const chart = chartFor(element);
+  if (!chart) return;
+  chart.clear();
+  const option = baseOption(title, subtitle);
+  option.xAxis.data = [];
+  option.series = [];
+  chart.setOption(option, true);
 }
 
 export function renderWealthChart(element, { dates, officialWealth, explorationWealth, explorationStart, explorationEnd, returnBasis }, onExplore) {
@@ -133,8 +144,8 @@ export function renderWealthChart(element, { dates, officialWealth, explorationW
       emphasis: { focus: "series" },
     },
   ];
-  chart.setOption(option, true);
   chart.off("datazoom");
+  chart.setOption(option, true);
   chart.on("datazoom", (event) => {
     const zoom = event.batch?.[0] ?? event;
     const current = chart.getOption().dataZoom?.[0] ?? {};
@@ -234,8 +245,8 @@ export function renderRebalanceChart(element, dates, comparison) {
   if (!chart || comparison.status !== "published") return;
   const colors = palette();
   const expectedLength = comparison.net.wealth.length;
-  const xDates = dates.length === expectedLength ? dates : [dates[0], ...dates].slice(0, expectedLength);
-  const option = baseOption("재조정 효과 비교", "동일 목표비중 · 비용 전/후와 미재조정 경로");
+  const xDates = rebalanceAxisLabels(dates, expectedLength);
+  const option = baseOption("재조정 효과 비교", "초기 1은 첫 수익률 전 · 동일 목표비중 · 비용 전/후와 미재조정 경로");
   option.legend = { top: 32, right: 8, data: ["미재조정", "비용 전", "비용 후"], textStyle: { color: colors.muted, fontSize: 10 } };
   option.xAxis.data = xDates;
   option.yAxis.axisLabel.formatter = (value) => value.toFixed(2);
@@ -245,6 +256,13 @@ export function renderRebalanceChart(element, dates, comparison) {
     { name: "비용 후", type: "line", data: comparison.net.wealth, showSymbol: false, lineStyle: { color: colors.blue, width: 2.2 } },
   ];
   chart.setOption(option, true);
+}
+
+export function rebalanceAxisLabels(dates, expectedLength) {
+  if (!Number.isInteger(expectedLength) || expectedLength <= 0) return [];
+  if (dates.length === expectedLength) return dates.slice(0, expectedLength);
+  if (dates.length === expectedLength - 1) return ["시작", ...dates];
+  return Array.from({ length: expectedLength }, (_, index) => dates[index] ?? (index === 0 ? "시작" : `관측 ${index}`));
 }
 
 export function disposeCharts() {

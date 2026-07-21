@@ -8,11 +8,17 @@ from pathlib import Path
 from .security import scan_public_files
 
 STATIC_DIRECTORIES = ("data", "docs", "schemas")
+STATIC_FILES = ("favicon.svg",)
 
 
 def build_site(root: Path, output: Path) -> None:
     site = root / "site"
-    required = (site / "index.html", site / "assets", *(root / name for name in STATIC_DIRECTORIES))
+    required = (
+        site / "index.html",
+        site / "assets",
+        *(site / name for name in STATIC_FILES),
+        *(root / name for name in STATIC_DIRECTORIES),
+    )
     missing = [str(path.relative_to(root)) for path in required if not path.exists()]
     if missing:
         raise FileNotFoundError(f"missing static paths: {', '.join(missing)}")
@@ -27,6 +33,8 @@ def build_site(root: Path, output: Path) -> None:
         staging.mkdir()
         shutil.copy2(site / "index.html", staging / "index.html")
         shutil.copytree(site / "assets", staging / "assets")
+        for name in STATIC_FILES:
+            shutil.copy2(site / name, staging / name)
         for name in STATIC_DIRECTORIES:
             shutil.copytree(root / name, staging / name)
         (staging / ".nojekyll").write_text("", encoding="utf-8")
@@ -42,7 +50,11 @@ def main() -> int:
     root = Path(__file__).resolve().parents[2]
     output = args.output if args.output.is_absolute() else root / args.output
     build_site(root, output)
-    print(f"Pages artifact ready: {output.relative_to(root)}")
+    try:
+        display_output = output.relative_to(root)
+    except ValueError:
+        display_output = output
+    print(f"Pages artifact ready: {display_output}")
     return 0
 
 

@@ -7,32 +7,46 @@
     <meta name="color-scheme" content="light dark">
     <title>Kelly Allocation Lab</title>
     <link rel="icon" href="./favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="./assets/styles.css">
+    <link rel="stylesheet" href="./assets/styles.css?v=20260722.1">
   </head>
   <body>
     <a class="skip-link" href="#main-content">본문으로 건너뛰기</a>
     <header class="site-header">
-      <a class="brand" href="./" aria-label="Kelly Allocation Lab 홈">
-        <span class="brand-mark" aria-hidden="true">K</span>
-        <span><strong>Kelly Allocation Lab</strong><small>성장률과 위험의 균형을 검증하는 연구 도구</small></span>
-      </a>
-      <div class="header-actions">
-        <a class="quiet-link" href="https://sonchanggi.github.io/quant-dashboard/">Quant Dashboard</a>
-        <button id="theme-toggle" class="icon-button" type="button" aria-label="다크 모드로 전환" title="테마 전환">◐</button>
-      </div>
+      <nav class="ecosystem-nav" aria-label="연결 프로젝트 바로가기">
+        <a class="brand" href="https://sonchanggi.github.io/quant-dashboard/" aria-label="Quant Research Hub로 이동">
+          <span class="brand-mark" aria-hidden="true">Q</span>
+          <span><strong>Quant Research Hub</strong><small>Independent research tools</small></span>
+        </a>
+        <ul class="project-links" aria-label="프로젝트 목록">
+          <li><a href="https://sonchanggi.github.io/quant-dashboard/">Hub</a></li>
+          <li><a class="is-active" href="./" aria-current="page">Kelly</a></li>
+          <li><a href="https://sonchanggi.github.io/fearNgreed/">Fear &amp; Greed</a></li>
+          <li><a href="https://sonchanggi.github.io/momentum-factor-lab/">Momentum</a></li>
+          <li><a href="https://sonchanggi.github.io/dram-price/">DRAM</a></li>
+          <li><a href="https://sonchanggi.github.io/best-factor/">Best Factor</a></li>
+          <li><a href="https://sonchanggi.github.io/etf-tracking/">ETF</a></li>
+          <li><a href="https://sonchanggi.github.io/sox/">SOX</a></li>
+          <li><a href="https://sonchanggi.github.io/quant-dashboard/risk-score/">Risk Score</a></li>
+          <li><a href="https://sonchanggi.github.io/port/">Port</a></li>
+          <li><a href="https://sonchanggi.github.io/valuation/">Valuation</a></li>
+        </ul>
+        <div class="header-actions">
+          <button id="theme-toggle" class="icon-button" type="button" aria-label="다크 모드로 전환" title="테마 전환">◐</button>
+        </div>
+      </nav>
     </header>
 
     <main id="main-content">
       <section class="hero">
         <div>
-          <p class="eyebrow">POSITION SIZING · RESEARCH, NOT ADVICE</p>
-          <h1>얼마를 투자할지,<br><span>성장률의 언어</span>로 비교하세요.</h1>
-          <p class="hero-copy">평균수익률과 복리수익을 분리하고, Full Kelly와 절대 2배 레버리지의 기대 로그성장률을 같은 기준에서 봅니다.</p>
+          <p class="eyebrow">KELLY POSITION SIZING</p>
+          <h1><span>성장률로</span> 투자 비중을 비교하세요.</h1>
+          <p class="hero-copy">과거 성과와 직접 가정을 같은 계산 기준으로 비교하고, Full Kelly와 2배 레버리지의 장기 성장률 차이를 확인합니다.</p>
         </div>
         <div class="hero-note">
-          <span>핵심 원칙</span>
-          <strong>탐색은 즉시, 공식 결과는 적용 후</strong>
-          <p>차트의 양끝 브러시는 탐색 수익률만 바꿉니다. 지표·Kelly·표는 <b>분석기간에 적용</b>을 눌러야 변경됩니다.</p>
+          <span>분석기간 원칙</span>
+          <strong>차트 탐색과 공식 계산을 분리합니다.</strong>
+          <p>브러시로 먼저 살펴봅니다. 공식 결과는 적용 후 지표와 표가 함께 갱신됩니다.</p>
         </div>
       </section>
 
@@ -45,6 +59,22 @@
       <div id="global-notice" class="notice" role="status" aria-live="polite" hidden></div>
 
       <section id="historical-mode" class="mode-view is-active" role="tabpanel" aria-labelledby="tab-historical">
+        <section id="historical-empty-state" class="historical-empty-state" aria-labelledby="historical-empty-title" hidden>
+          <div class="empty-state-copy">
+            <p class="eyebrow">MARKET DATA</p>
+            <h2 id="historical-empty-title">가격 이력을 연결하면 과거 분석이 열립니다.</h2>
+            <p>검증된 공개 시계열을 기다리는 동안 CSV를 불러오거나 직접 가정 모드에서 Kelly 비중을 바로 계산할 수 있습니다.</p>
+          </div>
+          <div class="empty-state-actions">
+            <input id="csv-file" type="file" accept=".csv,text/csv" hidden>
+            <button id="csv-upload" class="primary-button" type="button" aria-controls="csv-file">CSV 불러오기</button>
+            <button id="csv-template-download" class="secondary-button" type="button">CSV 템플릿</button>
+            <a class="secondary-button button-link" href="?mode=direct">직접 가정으로 계산</a>
+          </div>
+          <p class="upload-hint">필수 열: <code>date</code>, <code>price</code> · <code>return</code>은 가격에서 다시 계산합니다.</p>
+        </section>
+
+        <div id="historical-content">
         <div class="workspace-grid">
           <aside class="control-panel" aria-label="과거 데이터 분석 입력">
             <div class="section-heading"><span>01</span><div><h2>분석 대상</h2><p>공식 가격·수익률 계약만 사용</p></div></div>
@@ -64,6 +94,15 @@
 
             <div class="section-rule"></div>
             <div class="section-heading compact"><span>02</span><div><h2>공식 분석기간</h2><p>지표·Kelly 계산 기준</p></div></div>
+            <div class="quick-periods" role="group" aria-label="빠른 분석기간">
+              <button type="button" data-period="3m">3개월</button>
+              <button type="button" data-period="6m">6개월</button>
+              <button type="button" data-period="ytd">YTD</button>
+              <button type="button" data-period="1y">1년</button>
+              <button type="button" data-period="3y">3년</button>
+              <button type="button" data-period="5y">5년</button>
+              <button type="button" data-period="all">전체</button>
+            </div>
             <div class="field-grid two">
               <label class="field"><span>시작</span><input id="official-start" type="date"></label>
               <label class="field"><span>끝</span><input id="official-end" type="date"></label>
@@ -82,7 +121,7 @@
               <summary>고급 계산 기준</summary>
               <div class="field-grid two dense">
                 <label class="field"><span>연환산 거래일</span><input id="annualization-days" type="number" min="1" value="252"></label>
-                <label class="field"><span>Sortino MAR</span><span class="input-suffix"><input id="sortino-mar" type="number" step="0.1" value="0"><b>%</b></span></label>
+                <label class="field"><span>Sortino MAR</span><span class="input-suffix"><input id="sortino-mar" type="number" step="0.1" placeholder="무위험률 연동" aria-describedby="sortino-mar-help"><b>%</b></span><small id="sortino-mar-help" class="field-help">비워두면 무위험률을 사용합니다.</small></label>
               </div>
             </details>
           </aside>
@@ -92,12 +131,12 @@
               <div><p class="eyebrow">OFFICIAL RESULT</p><h2 id="result-title">분석 결과</h2><p id="official-period-label" class="period-label">데이터를 기다리는 중입니다.</p></div>
               <div class="toolbar-buttons">
                 <button id="share-url" class="quiet-button" type="button">URL 공유</button>
-                <button id="export-csv" class="quiet-button" type="button">CSV</button>
+                <button id="export-csv" class="quiet-button" type="button" title="공식 지표·Kelly 프리셋·재조정·2배 비교·일별수익률 내보내기">결과 CSV</button>
               </div>
             </div>
             <div id="historical-kelly-cards" class="hero-metrics" aria-live="polite">
-              <article class="metric-card primary"><span>Full Kelly</span><strong>—</strong><small>공식 분석기간</small></article>
-              <article class="metric-card"><span>Full Kelly 최대 성장률</span><strong>—</strong><small>연속복리</small></article>
+              <article class="metric-card primary"><span>Full Kelly 최대 기하성장률</span><strong>—</strong><small>원값과 함께 표시</small></article>
+              <article class="metric-card"><span>상한 적용 경로</span><strong>—</strong><small>최대 3×</small></article>
               <article class="metric-card"><span>절대 2배 성장률</span><strong>—</strong><small>동일 가정 비교</small></article>
               <article class="metric-card"><span>Exact Kelly</span><strong>—</strong><small>in-sample · 일간 재조정</small></article>
             </div>
@@ -107,7 +146,7 @@
               <div class="comparison-heading"><strong>2배 경로 비교</strong><span>합성 고정배율과 실제 일간목표 ETF는 별개입니다.</span></div>
               <div class="table-scroll">
                 <table id="leverage-comparison-table" class="result-table">
-                  <thead><tr><th>경로</th><th>상품</th><th>기대 산술 자산수익률</th><th>선택기간 누적수익률</th><th>CAGR</th><th>상태</th></tr></thead>
+                  <thead><tr><th>경로</th><th>상품</th><th>연환산 산술평균</th><th>선택기간 누적수익률</th><th>CAGR</th><th>상태</th></tr></thead>
                   <tbody><tr><td colspan="6">데이터를 기다리는 중입니다.</td></tr></tbody>
                 </table>
               </div>
@@ -122,21 +161,40 @@
             <button id="apply-exploration" class="primary-button" type="button" disabled>분석기간에 적용</button>
           </div>
           <div class="keyboard-range" aria-label="키보드 조작용 탐색기간">
-            <label><span>탐색 시작</span><input id="explore-start-slider" type="range" min="0" max="1" value="0"></label>
-            <label><span>탐색 끝</span><input id="explore-end-slider" type="range" min="0" max="1" value="1"></label>
+            <label><span>탐색 시작</span><input id="explore-start-slider" type="range" min="0" max="1" value="0" aria-describedby="exploration-period-label"></label>
+            <label><span>탐색 끝</span><input id="explore-end-slider" type="range" min="0" max="1" value="1" aria-describedby="exploration-period-label"></label>
           </div>
           <div id="wealth-chart" class="chart chart-wide" role="img" aria-label="기준가 100 누적자산과 기간 선택 차트"></div>
+          <div class="chart-utilities">
+            <button id="wealth-period-end" class="quiet-button" type="button">기간 끝으로</button>
+            <button id="wealth-table-toggle" class="quiet-button" type="button" aria-controls="wealth-data-table" aria-expanded="false">차트 값을 표로 보기</button>
+          </div>
+          <div id="wealth-data-table" class="chart-data-table table-scroll" hidden>
+            <table class="result-table">
+              <caption>기준가 100 누적자산 차트 데이터</caption>
+              <thead><tr><th>날짜</th><th>공식 분석기간</th><th>탐색 미리보기</th></tr></thead>
+              <tbody><tr><td colspan="3">기간을 선택하면 차트 값이 표시됩니다.</td></tr></tbody>
+            </table>
+          </div>
         </section>
 
         <section class="chart-grid">
-          <div class="chart-card"><div id="drawdown-chart" class="chart" role="img" aria-label="공식 분석기간 낙폭 차트"></div></div>
-          <div class="chart-card"><div id="growth-chart" class="chart" role="img" aria-label="성장률 레버리지 곡선"></div></div>
+          <div class="chart-card">
+            <div id="drawdown-chart" class="chart" role="img" aria-label="공식 분석기간 낙폭 차트"></div>
+            <details class="chart-table-fallback"><summary>낙폭 값을 표로 보기</summary><div class="table-scroll"><table id="drawdown-data-table" class="result-table compact-result-table"><caption>공식 분석기간 낙폭 데이터</caption><thead><tr><th>날짜</th><th>낙폭</th></tr></thead><tbody><tr><td colspan="2">표시할 낙폭 값이 없습니다.</td></tr></tbody></table></div></details>
+          </div>
+          <div class="chart-card">
+            <div id="growth-chart" class="chart" role="img" aria-label="성장률 레버리지 곡선"></div>
+            <details class="chart-table-fallback"><summary>성장률 곡선을 표로 보기</summary><div class="table-scroll"><table id="growth-data-table" class="result-table compact-result-table"><caption>성장률 레버리지 데이터</caption><thead><tr><th>레버리지</th><th>로그성장률</th><th>표식</th></tr></thead><tbody><tr><td colspan="3">표시할 성장률 값이 없습니다.</td></tr></tbody></table></div></details>
+          </div>
           <div class="chart-card full-span">
             <div class="rebalance-summary" id="rebalance-summary"></div>
             <div id="rebalance-chart" class="chart" role="img" aria-label="재조정 효과 비교 차트"></div>
+            <details class="chart-table-fallback"><summary>재조정 경로를 표로 보기</summary><div class="table-scroll"><table id="rebalance-data-table" class="result-table compact-result-table"><caption>재조정 효과 비교 경로</caption><thead><tr><th>날짜</th><th>미재조정</th><th>비용 전</th><th>비용 후</th></tr></thead><tbody><tr><td colspan="4">표시할 재조정 값이 없습니다.</td></tr></tbody></table></div></details>
           </div>
         </section>
-        <section class="method-note"><strong>해석 주의</strong><p>역사 Kelly는 선택기간을 다시 맞춘 in-sample 진단입니다. 미래 기대수익이나 추천 비중이 아닙니다. 실제 레버리지 ETF는 일간 목표배율·비용·추적오차 때문에 합성 고정배율 경로와 다릅니다.</p></section>
+        <section class="method-note"><strong>계산 기준</strong><p>Exact Kelly는 선택기간의 일간 수익률을 다시 맞춘 in-sample 진단입니다. 실제 레버리지 ETF 경로는 일간 목표배율·비용·추적오차를 그대로 반영해 합성 고정배율과 분리합니다. 결과 CSV는 공식 지표·Kelly 프리셋·재조정·2배 비교·일별수익률을 포함하지만, 업로드 원문 자체는 포함하지 않습니다.</p></section>
+        </div>
       </section>
 
       <section id="direct-mode" class="mode-view" role="tabpanel" aria-labelledby="tab-direct" hidden>
@@ -153,15 +211,23 @@
             <p class="microcopy">차입 스프레드는 1배 초과분에 적용합니다. v1 실제 적용 경로는 long-only, 최대 3배입니다.</p>
           </aside>
           <div class="results-panel">
-            <div class="results-toolbar"><div><p class="eyebrow">ASSUMPTION RESULT</p><h2>가정 기반 Kelly</h2><p class="period-label">미래 예측이 아닌 민감도 계산입니다.</p></div></div>
+            <div class="results-toolbar"><div><p class="eyebrow">ASSUMPTION RESULT</p><h2>가정 기반 Kelly</h2><p class="period-label">입력한 연율 가정에 따른 성장률 민감도입니다.</p></div></div>
+            <section id="direct-result-insight" class="result-insight" aria-live="polite">
+              <span>핵심 비교</span>
+              <strong id="direct-insight-title">Full Kelly와 2배를 같은 성장률 기준으로 비교합니다.</strong>
+              <p id="direct-insight-detail">기대초과수익률과 변동성을 바꾸면 적용 비중과 장기 성장률이 즉시 갱신됩니다.</p>
+            </section>
             <div id="direct-kelly-cards" class="hero-metrics">
-              <article class="metric-card primary"><span>Full Kelly 적용 비중</span><strong>—</strong><small>최대 3×</small></article>
-              <article class="metric-card"><span>Full Kelly 장기 기하성장률</span><strong>—</strong><small>exp(g)−1</small></article>
+              <article class="metric-card primary"><span>Full Kelly 최대 기하성장률</span><strong>—</strong><small>원값과 함께 표시</small></article>
+              <article class="metric-card"><span>상한 적용 경로</span><strong>—</strong><small>최대 3×</small></article>
               <article class="metric-card"><span>2배 기대 산술 자산수익률</span><strong>—</strong><small>변동성 드래그 전</small></article>
               <article class="metric-card"><span>2배 장기 기하성장률</span><strong>—</strong><small>exp(g)−1</small></article>
             </div>
             <div id="direct-presets" class="preset-strip"></div>
-            <div class="chart-card standalone"><div id="direct-growth-chart" class="chart" role="img" aria-label="직접 가정 성장률 레버리지 곡선"></div></div>
+            <div class="chart-card standalone">
+              <div id="direct-growth-chart" class="chart" role="img" aria-label="직접 가정 성장률 레버리지 곡선"></div>
+              <details class="chart-table-fallback"><summary>성장률 곡선을 표로 보기</summary><div class="table-scroll"><table id="direct-growth-data-table" class="result-table compact-result-table"><caption>직접 가정 성장률 레버리지 데이터</caption><thead><tr><th>레버리지</th><th>로그성장률</th><th>표식</th></tr></thead><tbody><tr><td colspan="3">표시할 성장률 값이 없습니다.</td></tr></tbody></table></div></details>
+            </div>
           </div>
         </div>
       </section>
@@ -169,43 +235,82 @@
       <section id="portfolio-mode" class="mode-view" role="tabpanel" aria-labelledby="tab-portfolio" hidden>
         <div class="portfolio-layout">
           <div class="control-panel portfolio-controls">
-            <div class="section-heading"><span>01</span><div><h2>자산 가정</h2><p>모든 값은 연율 · 포트폴리오 기준통화 KRW</p></div></div>
-            <div class="table-scroll">
-              <table class="input-table" id="portfolio-assets-table">
-                <thead><tr><th>자산</th><th>기대초과수익률</th><th>변동성</th></tr></thead>
-                <tbody>
-                  <tr><td><input aria-label="첫 번째 자산명" value="SPY"></td><td><span class="input-suffix"><input aria-label="첫 번째 기대초과수익률" data-p-excess type="number" value="6" step="0.1"><b>%</b></span></td><td><span class="input-suffix"><input aria-label="첫 번째 변동성" data-p-vol type="number" value="18" step="0.1"><b>%</b></span></td></tr>
-                  <tr><td><input aria-label="두 번째 자산명" value="TLT"></td><td><span class="input-suffix"><input aria-label="두 번째 기대초과수익률" data-p-excess type="number" value="2" step="0.1"><b>%</b></span></td><td><span class="input-suffix"><input aria-label="두 번째 변동성" data-p-vol type="number" value="14" step="0.1"><b>%</b></span></td></tr>
-                  <tr><td><input aria-label="세 번째 자산명" value="GLD"></td><td><span class="input-suffix"><input aria-label="세 번째 기대초과수익률" data-p-excess type="number" value="3" step="0.1"><b>%</b></span></td><td><span class="input-suffix"><input aria-label="세 번째 변동성" data-p-vol type="number" value="16" step="0.1"><b>%</b></span></td></tr>
-                </tbody>
-              </table>
+            <div class="section-heading"><span>01</span><div><h2>자산과 데이터</h2><p>2–5개 자산 · 포트폴리오 기준통화 KRW</p></div></div>
+            <fieldset class="segmented-field portfolio-source-field">
+              <legend>데이터 원천</legend>
+              <div class="segmented" role="group" aria-label="포트폴리오 데이터 원천">
+                <button type="button" data-portfolio-source="historical" aria-pressed="false">역사 데이터</button>
+                <button type="button" data-portfolio-source="direct" class="is-active" aria-pressed="true">직접 가정</button>
+              </div>
+            </fieldset>
+            <div id="portfolio-direct-inputs" class="portfolio-source-panel">
+              <div class="table-scroll">
+                <table class="input-table" id="portfolio-assets-table">
+                  <thead><tr><th>자산</th><th>기대초과수익률</th><th>변동성</th><th></th></tr></thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+            <div id="portfolio-historical-inputs" class="portfolio-source-panel" hidden>
+              <p class="portfolio-source-note">정적 계약을 먼저 사용하고, 필요하면 공개 Worker로 조회합니다. USD 자산은 USD/KRW를 최대 5일 선행값으로 결합합니다.</p>
+              <div id="portfolio-history-assets" class="history-asset-list"></div>
+            </div>
+            <div class="portfolio-row-actions">
+              <span id="portfolio-asset-count">3 / 5</span>
+              <button id="portfolio-add-asset" class="quiet-button" type="button">자산 추가</button>
             </div>
             <div class="section-heading compact"><span>02</span><div><h2>상관행렬</h2><p>대칭으로 입력 · PSD 검증</p></div></div>
             <div class="table-scroll"><table class="correlation-table" id="correlation-input"></table></div>
             <div class="field-grid two dense portfolio-settings">
               <label class="field"><span>무위험률</span><span class="input-suffix"><input id="portfolio-rf" type="number" value="0" step="0.1"><b>%</b></span></label>
+              <label class="field"><span>차입 스프레드</span><span class="input-suffix"><input id="portfolio-borrow-spread" type="number" value="0" min="0" step="0.1"><b>%</b></span></label>
               <label class="field"><span>총 노출 상한</span><span class="input-suffix"><input id="portfolio-cap" type="number" value="3" min="0" max="3" step="0.1"><b>×</b></span></label>
+            </div>
+            <div id="portfolio-history-settings" class="field-grid two dense portfolio-settings" hidden>
+              <label class="field"><span>역사 시작일</span><input id="portfolio-history-start" type="date"></label>
+              <label class="field"><span>역사 종료일</span><input id="portfolio-history-end" type="date"></label>
+              <label class="field"><span>리밸런싱</span><select id="portfolio-rebalance-frequency"><option value="none">없음</option><option value="daily">일간</option><option value="weekly">주간</option><option value="monthly" selected>월간</option><option value="quarterly">분기</option><option value="yearly">연간</option></select></label>
+              <label class="field"><span>편도 거래비용</span><span class="input-suffix"><input id="portfolio-transaction-cost" type="number" value="10" min="0" step="1"><b>bp</b></span></label>
             </div>
             <button id="calculate-portfolio" class="primary-button full" type="button">포트폴리오 계산</button>
             <p id="portfolio-error" class="field-error" role="alert"></p>
           </div>
           <div class="portfolio-results">
+            <section id="portfolio-result-insight" class="result-insight" aria-live="polite">
+              <span>적용 포트폴리오</span>
+              <strong id="portfolio-insight-title">총 노출과 자산별 적용 비중을 함께 확인합니다.</strong>
+              <p id="portfolio-insight-detail">상관행렬과 총 노출 상한을 반영한 결과가 아래 카드와 차트에 표시됩니다.</p>
+            </section>
             <div id="portfolio-cards" class="hero-metrics"></div>
+            <section id="portfolio-history-estimates" class="leverage-comparison" hidden>
+              <div class="comparison-heading"><strong>역사 추정치</strong><span>공통 거래일 기준 연환산 산술평균 · KRW</span></div>
+              <div class="table-scroll"><table class="result-table"><thead><tr><th>자산</th><th>관측치</th><th>산술수익률</th><th>초과수익률</th><th>변동성</th></tr></thead><tbody></tbody></table></div>
+            </section>
+            <section class="leverage-comparison">
+              <div class="comparison-heading"><strong>이론값과 적용 비중</strong><span>무제약 Σ⁻¹e / long-only · 총 노출 ≤ 3×</span></div>
+              <div class="table-scroll"><table id="portfolio-allocation-table" class="result-table"><thead><tr><th>자산</th><th>이론값</th><th>적용값</th></tr></thead><tbody></tbody></table></div>
+            </section>
             <div class="chart-grid">
               <div class="chart-card"><div id="weights-chart" class="chart" role="img" aria-label="포트폴리오 비중 차트"></div></div>
               <div class="chart-card"><div id="correlation-chart" class="chart" role="img" aria-label="상관행렬 히트맵"></div></div>
             </div>
-            <section class="method-note"><strong>제약과 해석</strong><p><code>Σ⁻¹e</code>는 진단용 무제약 이론값입니다. 적용값은 공매도 없이 각 비중 0 이상, 총 노출 3배 이하에서 기대 로그성장률을 최대화합니다. 편집한 상관행렬이 비대칭이거나 양의 준정부호가 아니면 기존 결과를 보존합니다.</p></section>
+            <section id="portfolio-history-results" class="chart-card standalone" hidden>
+              <div class="comparison-heading"><strong>리밸런싱 효과</strong><span>매수후보유 대비 연 CAGR 차이 · 거래비용 별도</span></div>
+              <div id="portfolio-rebalance-summary" class="rebalance-summary"></div>
+              <div id="portfolio-rebalance-chart" class="chart" role="img" aria-label="포트폴리오 리밸런싱 효과 차트"></div>
+              <details class="chart-table-fallback"><summary>재조정 경로를 표로 보기</summary><div class="table-scroll"><table id="portfolio-rebalance-data-table" class="result-table compact-result-table"><caption>포트폴리오 재조정 효과 비교 경로</caption><thead><tr><th>날짜</th><th>미재조정</th><th>비용 전</th><th>비용 후</th></tr></thead><tbody><tr><td colspan="4">표시할 재조정 값이 없습니다.</td></tr></tbody></table></div></details>
+            </section>
+            <section class="method-note"><strong>적용 제약</strong><p><code>Σ⁻¹e</code>는 무제약 이론값이며, 적용값은 각 비중 0 이상·총 노출 3배 이하에서 기대 로그성장률을 최대화합니다. 비대칭이거나 양의 준정부호가 아닌 상관행렬은 적용하지 않습니다.</p></section>
           </div>
         </div>
       </section>
     </main>
 
     <footer>
-      <div><strong>Kelly Allocation Lab</strong><p>연구·교육용 도구이며 투자 조언이 아닙니다. 입력과 역사 표본의 불확실성을 직접 검증하세요.</p></div>
+      <div><strong>Kelly Allocation Lab</strong><p>연구·교육용 도구이며 투자 조언이 아닙니다. 상단 CSV는 현재 모드의 계산 결과를 내보내고, 링크는 입력 설정을 공유합니다. 업로드 CSV 원문은 공유 URL에 포함되지 않습니다.</p></div>
       <div class="footer-links"><a href="./data/summary.json">공개 데이터 계약</a><a href="https://github.com/SonChangGi/kelly">GitHub</a></div>
     </footer>
 
-    <script type="module" src="./assets/app.js"></script>
+    <script type="module" src="./assets/app.js?v=20260722.1"></script>
   </body>
 </html>

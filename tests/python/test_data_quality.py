@@ -48,6 +48,13 @@ def test_unsorted_or_nonpositive_prices_fail_closed() -> None:
     }
 
 
+def test_single_observation_cannot_be_published() -> None:
+    result = validate_price_series(series(("2026-07-20",), (100.0,)))
+    assert not result.accepted
+    assert result.status == "unavailable"
+    assert "INSUFFICIENT_OBSERVATIONS" in {issue.code for issue in result.issues}
+
+
 def test_historical_drift_requires_explicit_backfill() -> None:
     dates = ("2026-07-17", "2026-07-20", "2026-07-21")
     prices = (100.0, 101.0, 102.0)

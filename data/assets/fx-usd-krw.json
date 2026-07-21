@@ -33,6 +33,6 @@
     "pair": "USD/KRW",
     "dates": [],
     "rates": [],
-    "maxStalenessDays": 3
+    "maxStalenessDays": 5
   }
 }

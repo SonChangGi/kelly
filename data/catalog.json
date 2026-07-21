@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "contract": "kelly-asset-catalog",
-  "state": "published",
-  "catalogVersion": "2026-07-21-v2",
-  "generatedAt": "2026-07-21T00:00:00+09:00",
+  "state": "unavailable",
+  "catalogVersion": "2026-07-21-v3",
+  "generatedAt": "2026-07-21T14:27:11.713144+00:00",
   "assetCount": 50,
   "providerPolicy": {
     "providers": [
@@ -36,7 +36,9 @@
         "005930.KS"
       ],
       "dataPath": "assets/kr-005930.json",
-      "returnBasis": "price_return"
+      "returnBasis": "price_return",
+      "availableFrom": null,
+      "availableTo": null
     },
     {
       "id": "kr-000660",
@@ -59,7 +61,9 @@
         "000660.KS"
       ],
       "dataPath": "assets/kr-000660.json",
-      "returnBasis": "price_return"
+      "returnBasis": "price_return",
+      "availableFrom": null,
+      "availableTo": null
     },
     {
       "id": "index-gspc",
@@ -86,7 +90,9 @@
         "SPX"
       ],
       "dataPath": "assets/index-gspc.json",
-      "returnBasis": "price_return"
+      "returnBasis": "price_return",
+      "availableFrom": null,
+      "availableTo": null
     },
     {
       "id": "index-ndx",
@@ -113,7 +119,9 @@
         "NDX"
       ],
       "dataPath": "assets/index-ndx.json",
-      "returnBasis": "price_return"
+      "returnBasis": "price_return",
+      "availableFrom": null,
+      "availableTo": null
     },
     {
       "id": "index-sox",
@@ -130,17 +138,15 @@
         "symbol": "SOX",
         "exchange": "INDEX"
       },
-      "leveragedProducts": {
-        "long2x": "etf-usd",
-        "inverse2x": "etf-ssg"
-      },
       "searchTerms": [
         "필라델피아 반도체지수",
         "^SOX",
         "SOX"
       ],
       "dataPath": "assets/index-sox.json",
-      "returnBasis": "price_return"
+      "returnBasis": "price_return",
+      "availableFrom": null,
+      "availableTo": null
     },
     {
       "id": "stock-aapl",
@@ -163,7 +169,9 @@
         "AAPL"
       ],
       "dataPath": "assets/stock-aapl.json",
-      "returnBasis": "total_return_approximation"
+      "returnBasis": "total_return_approximation",
+      "availableFrom": null,
+      "availableTo": null
     },
     {
       "id": "stock-msft",
@@ -186,7 +194,9 @@
         "MSFT"
       ],
       "dataPath": "assets/stock-msft.json",
-      "returnBasis": "total_return_approximation"
+      "returnBasis": "total_return_approximation",
+      "availableFrom": null,
+      "availableTo": null
     },
     {
       "id": "stock-nvda",
@@ -209,7 +219,9 @@
         "NVDA"
       ],
       "dataPath": "assets/stock-nvda.json",
-      "returnBasis": "total_return_approximation"
+      "returnBasis": "total_return_approximation",
+      "availableFrom": null,
+      "availableTo": null
     },
     {
       "id": "stock-amzn",
@@ -232,7 +244,9 @@
         "AMZN"
       ],
       "dataPath": "assets/stock-amzn.json",
-      "returnBasis": "total_return_approximation"
+      "returnBasis": "total_return_approximation",
+      "availableFrom": null,
+      "availableTo": null
     },
     {
       "id": "stock-googl",
@@ -255,7 +269,9 @@
         "GOOGL"
       ],
       "dataPath": "assets/stock-googl.json",
-      "returnBasis": "total_return_approximation"
+      "returnBasis": "total_return_approximation",
+      "availableFrom": null,
+      "availableTo": null
     },
     {
       "id": "stock-meta",
@@ -278,7 +294,9 @@
         "META"
       ],
       "dataPath": "assets/stock-meta.json",
-      "returnBasis": "total_return_approximation"
+      "returnBasis": "total_return_approximation",
+      "availableFrom": null,
+      "availableTo": null
     },
     {
       "id": "stock-tsla",
@@ -301,7 +319,9 @@
         "TSLA"
       ],
       "dataPath": "assets/stock-tsla.json",
-      "returnBasis": "total_return_approximation"
+      "returnBasis": "total_return_approximation",
+      "availableFrom": null,
+      "availableTo": null
     },
     {
       "id": "stock-orcl",
@@ -324,7 +344,9 @@
         "ORCL"
       ],
       "dataPath": "assets/stock-orcl.json",
-      "returnBasis": "total_return_approximation"
+      "returnBasis": "total_return_approximation",
+      "availableFrom": null,
+      "availableTo": null
     },
     {
       "id": "stock-crm",
@@ -347,7 +369,9 @@
         "CRM"
       ],
       "dataPath": "assets/stock-crm.json",
-      "returnBasis": "total_return_approximation"
+      "returnBasis": "total_return_approximation",
+      "availableFrom": null,
+      "availableTo": null
     },
     {
       "id": "stock-nflx",
@@ -370,7 +394,9 @@
         "NFLX"
       ],
       "dataPath": "assets/stock-nflx.json",
-      "returnBasis": "total_return_approximation"
+      "returnBasis": "total_return_approximation",
+      "availableFrom": null,
+      "availableTo": null
     },
     {
       "id": "stock-spcx",
@@ -391,7 +417,9 @@
         "SPCX"
       ],
       "dataPath": "assets/stock-spcx.json",
-      "returnBasis": "total_return_approximation"
+      "returnBasis": "total_return_approximation",
+      "availableFrom": null,
+      "availableTo": null
     },
     {
       "id": "stock-avgo",
@@ -414,7 +442,9 @@
         "AVGO"
       ],
       "dataPath": "assets/stock-avgo.json",
-      "returnBasis": "total_return_approximation"
+      "returnBasis": "total_return_approximation",
+      "availableFrom": null,
+      "availableTo": null
     },
     {
       "id": "stock-tsm",
@@ -437,7 +467,9 @@
         "TSM"
       ],
       "dataPath": "assets/stock-tsm.json",
-      "returnBasis": "total_return_approximation"
+      "returnBasis": "total_return_approximation",
+      "availableFrom": null,
+      "availableTo": null
     },
     {
       "id": "stock-amd",
@@ -459,7 +491,9 @@
         "advanced micro devices"
       ],
       "dataPath": "assets/stock-amd.json",
-      "returnBasis": "total_return_approximation"
+      "returnBasis": "total_return_approximation",
+      "availableFrom": null,
+      "availableTo": null
     },
     {
       "id": "stock-asml",
@@ -481,7 +515,9 @@
         "asml holding"
       ],
       "dataPath": "assets/stock-asml.json",
-      "returnBasis": "total_return_approximation"
+      "returnBasis": "total_return_approximation",
+      "availableFrom": null,
+      "availableTo": null
     },
     {
       "id": "stock-mu",
@@ -504,7 +540,9 @@
         "MU"
       ],
       "dataPath": "assets/stock-mu.json",
-      "returnBasis": "total_return_approximation"
+      "returnBasis": "total_return_approximation",
+      "availableFrom": null,
+      "availableTo": null
     },
     {
       "id": "stock-qcom",
@@ -527,7 +565,9 @@
         "QCOM"
       ],
       "dataPath": "assets/stock-qcom.json",
-      "returnBasis": "total_return_approximation"
+      "returnBasis": "total_return_approximation",
+      "availableFrom": null,
+      "availableTo": null
     },
     {
       "id": "stock-txn",
@@ -550,7 +590,9 @@
         "TXN"
       ],
       "dataPath": "assets/stock-txn.json",
-      "returnBasis": "total_return_approximation"
+      "returnBasis": "total_return_approximation",
+      "availableFrom": null,
+      "availableTo": null
     },
     {
       "id": "stock-adi",
@@ -573,7 +615,9 @@
         "ADI"
       ],
       "dataPath": "assets/stock-adi.json",
-      "returnBasis": "total_return_approximation"
+      "returnBasis": "total_return_approximation",
+      "availableFrom": null,
+      "availableTo": null
     },
     {
       "id": "stock-arm",
@@ -596,7 +640,9 @@
         "ARM"
       ],
       "dataPath": "assets/stock-arm.json",
-      "returnBasis": "total_return_approximation"
+      "returnBasis": "total_return_approximation",
+      "availableFrom": null,
+      "availableTo": null
     },
     {
       "id": "stock-mrvl",
@@ -619,7 +665,9 @@
         "MRVL"
       ],
       "dataPath": "assets/stock-mrvl.json",
-      "returnBasis": "total_return_approximation"
+      "returnBasis": "total_return_approximation",
+      "availableFrom": null,
+      "availableTo": null
     },
     {
       "id": "stock-mchp",
@@ -642,7 +690,9 @@
         "MCHP"
       ],
       "dataPath": "assets/stock-mchp.json",
-      "returnBasis": "total_return_approximation"
+      "returnBasis": "total_return_approximation",
+      "availableFrom": null,
+      "availableTo": null
     },
     {
       "id": "stock-amat",
@@ -665,7 +715,9 @@
         "AMAT"
       ],
       "dataPath": "assets/stock-amat.json",
-      "returnBasis": "total_return_approximation"
+      "returnBasis": "total_return_approximation",
+      "availableFrom": null,
+      "availableTo": null
     },
     {
       "id": "stock-lrcx",
@@ -688,7 +740,9 @@
         "LRCX"
       ],
       "dataPath": "assets/stock-lrcx.json",
-      "returnBasis": "total_return_approximation"
+      "returnBasis": "total_return_approximation",
+      "availableFrom": null,
+      "availableTo": null
     },
     {
       "id": "stock-klac",
@@ -710,7 +764,9 @@
         "KLAC"
       ],
       "dataPath": "assets/stock-klac.json",
-      "returnBasis": "total_return_approximation"
+      "returnBasis": "total_return_approximation",
+      "availableFrom": null,
+      "availableTo": null
     },
     {
       "id": "stock-ter",
@@ -733,7 +789,9 @@
         "TER"
       ],
       "dataPath": "assets/stock-ter.json",
-      "returnBasis": "total_return_approximation"
+      "returnBasis": "total_return_approximation",
+      "availableFrom": null,
+      "availableTo": null
     },
     {
       "id": "stock-lite",
@@ -756,7 +814,9 @@
         "LITE"
       ],
       "dataPath": "assets/stock-lite.json",
-      "returnBasis": "total_return_approximation"
+      "returnBasis": "total_return_approximation",
+      "availableFrom": null,
+      "availableTo": null
     },
     {
       "id": "stock-wdc",
@@ -779,7 +839,9 @@
         "WDC"
       ],
       "dataPath": "assets/stock-wdc.json",
-      "returnBasis": "total_return_approximation"
+      "returnBasis": "total_return_approximation",
+      "availableFrom": null,
+      "availableTo": null
     },
     {
       "id": "stock-sndk",
@@ -802,7 +864,9 @@
         "SNDK"
       ],
       "dataPath": "assets/stock-sndk.json",
-      "returnBasis": "total_return_approximation"
+      "returnBasis": "total_return_approximation",
+      "availableFrom": null,
+      "availableTo": null
     },
     {
       "id": "stock-stx",
@@ -825,7 +889,9 @@
         "STX"
       ],
       "dataPath": "assets/stock-stx.json",
-      "returnBasis": "total_return_approximation"
+      "returnBasis": "total_return_approximation",
+      "availableFrom": null,
+      "availableTo": null
     },
     {
       "id": "etf-spy",
@@ -851,7 +917,9 @@
         "SPY"
       ],
       "dataPath": "assets/etf-spy.json",
-      "returnBasis": "total_return_approximation"
+      "returnBasis": "total_return_approximation",
+      "availableFrom": null,
+      "availableTo": null
     },
     {
       "id": "etf-qqq",
@@ -877,7 +945,9 @@
         "QQQ"
       ],
       "dataPath": "assets/etf-qqq.json",
-      "returnBasis": "total_return_approximation"
+      "returnBasis": "total_return_approximation",
+      "availableFrom": null,
+      "availableTo": null
     },
     {
       "id": "etf-vti",
@@ -899,7 +969,9 @@
         "VTI"
       ],
       "dataPath": "assets/etf-vti.json",
-      "returnBasis": "total_return_approximation"
+      "returnBasis": "total_return_approximation",
+      "availableFrom": null,
+      "availableTo": null
     },
     {
       "id": "etf-iwm",
@@ -921,7 +993,9 @@
         "IWM"
       ],
       "dataPath": "assets/etf-iwm.json",
-      "returnBasis": "total_return_approximation"
+      "returnBasis": "total_return_approximation",
+      "availableFrom": null,
+      "availableTo": null
     },
     {
       "id": "etf-smh",
@@ -938,16 +1012,14 @@
         "symbol": "SMH",
         "exchange": "NASDAQ"
       },
-      "leveragedProducts": {
-        "long2x": "etf-usd",
-        "inverse2x": "etf-ssg"
-      },
       "searchTerms": [
         "반도체 ETF",
         "SMH"
       ],
       "dataPath": "assets/etf-smh.json",
-      "returnBasis": "total_return_approximation"
+      "returnBasis": "total_return_approximation",
+      "availableFrom": null,
+      "availableTo": null
     },
     {
       "id": "etf-soxx",
@@ -964,16 +1036,14 @@
         "symbol": "SOXX",
         "exchange": "NASDAQ"
       },
-      "leveragedProducts": {
-        "long2x": "etf-usd",
-        "inverse2x": "etf-ssg"
-      },
       "searchTerms": [
         "반도체 ETF",
         "SOXX"
       ],
       "dataPath": "assets/etf-soxx.json",
-      "returnBasis": "total_return_approximation"
+      "returnBasis": "total_return_approximation",
+      "availableFrom": null,
+      "availableTo": null
     },
     {
       "id": "etf-gld",
@@ -995,7 +1065,9 @@
         "GLD"
       ],
       "dataPath": "assets/etf-gld.json",
-      "returnBasis": "total_return_approximation"
+      "returnBasis": "total_return_approximation",
+      "availableFrom": null,
+      "availableTo": null
     },
     {
       "id": "etf-tlt",
@@ -1017,7 +1089,9 @@
         "TLT"
       ],
       "dataPath": "assets/etf-tlt.json",
-      "returnBasis": "total_return_approximation"
+      "returnBasis": "total_return_approximation",
+      "availableFrom": null,
+      "availableTo": null
     },
     {
       "id": "etf-sso",
@@ -1039,7 +1113,9 @@
         "SSO"
       ],
       "dataPath": "assets/etf-sso.json",
-      "returnBasis": "total_return_approximation"
+      "returnBasis": "total_return_approximation",
+      "availableFrom": null,
+      "availableTo": null
     },
     {
       "id": "etf-sds",
@@ -1061,7 +1137,9 @@
         "SDS"
       ],
       "dataPath": "assets/etf-sds.json",
-      "returnBasis": "total_return_approximation"
+      "returnBasis": "total_return_approximation",
+      "availableFrom": null,
+      "availableTo": null
     },
     {
       "id": "etf-qld",
@@ -1083,7 +1161,9 @@
         "QLD"
       ],
       "dataPath": "assets/etf-qld.json",
-      "returnBasis": "total_return_approximation"
+      "returnBasis": "total_return_approximation",
+      "availableFrom": null,
+      "availableTo": null
     },
     {
       "id": "etf-qid",
@@ -1105,7 +1185,9 @@
         "QID"
       ],
       "dataPath": "assets/etf-qid.json",
-      "returnBasis": "total_return_approximation"
+      "returnBasis": "total_return_approximation",
+      "availableFrom": null,
+      "availableTo": null
     },
     {
       "id": "etf-usd",
@@ -1127,7 +1209,9 @@
         "USD ETF"
       ],
       "dataPath": "assets/etf-usd.json",
-      "returnBasis": "total_return_approximation"
+      "returnBasis": "total_return_approximation",
+      "availableFrom": null,
+      "availableTo": null
     },
     {
       "id": "etf-ssg",
@@ -1149,7 +1233,9 @@
         "SSG"
       ],
       "dataPath": "assets/etf-ssg.json",
-      "returnBasis": "total_return_approximation"
+      "returnBasis": "total_return_approximation",
+      "availableFrom": null,
+      "availableTo": null
     },
     {
       "id": "fx-usd-krw",
@@ -1172,7 +1258,9 @@
         "환율"
       ],
       "dataPath": "assets/fx-usd-krw.json",
-      "returnBasis": "fx_rate"
+      "returnBasis": "fx_rate",
+      "availableFrom": null,
+      "availableTo": null
     }
   ]
 }

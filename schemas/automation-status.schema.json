@@ -31,12 +31,27 @@
     "provider": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["name", "configured", "rightsApproved", "normalizedOnly"],
+      "required": ["name", "configured", "rightsApproved", "normalizedOnly", "providers"],
       "properties": {
-        "name": { "const": "twelve_data" },
+        "name": { "type": "string", "enum": ["twelve_data", "krx", "mixed"] },
         "configured": { "type": "boolean" },
         "rightsApproved": { "type": "boolean" },
-        "normalizedOnly": { "const": true }
+        "normalizedOnly": { "const": true },
+        "providers": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "configured", "rightsApproved"],
+            "properties": {
+              "name": { "type": "string", "enum": ["krx", "twelve_data"] },
+              "configured": { "type": "boolean" },
+              "rightsApproved": { "type": "boolean" }
+            }
+          }
+        }
       }
     },
     "publication": {

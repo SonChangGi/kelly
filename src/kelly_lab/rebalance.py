@@ -268,8 +268,14 @@ def simulate_rebalancing(
         all_dates = [_date(value) for value in dates]
         if any(right <= left for left, right in zip(all_dates, all_dates[1:], strict=False)):
             raise KellyLabError(ReasonCode.INVALID_DATES, "dates must be strictly increasing")
-        date_span = (all_dates[0], all_dates[-1])
-        parsed_dates = all_dates[1:] if len(all_dates) == len(rows) + 1 else all_dates
+        if len(all_dates) == len(rows) + 1:
+            date_span = (all_dates[0], all_dates[-1])
+            parsed_dates = all_dates[1:]
+        else:
+            # Return timestamps do not reveal the start of the first holding
+            # period.  Use the disclosed observations-per-year convention
+            # rather than pretending N returns span only N-1 date intervals.
+            parsed_dates = all_dates
 
     risk_free_periodic = annual_rate_to_periodic(risk_free_rate, annualization)
     if risk_free_rate + borrowing_spread <= -1:

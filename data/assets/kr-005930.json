@@ -25,7 +25,7 @@
     "cachedAt": null
   },
   "limitations": [
-    "provider_rights_not_confirmed",
-    "server_secret_not_configured"
+    "krx_public_display_rights_unconfirmed",
+    "krx_api_key_not_published"
   ]
 }

@@ -7,7 +7,13 @@ from dataclasses import asdict, dataclass, field
 from math import expm1, inf, isfinite, log
 
 from .errors import KellyLabError, ReasonCode
-from .metrics import TRADING_DAYS_PER_YEAR, annual_rate_to_periodic
+from .metrics import (
+    TRADING_DAYS_PER_YEAR,
+    annual_borrowing_spread_to_periodic,
+    annual_rate_to_periodic,
+)
+
+ZERO_VOLATILITY_TOLERANCE = 1e-12
 
 
 @dataclass(frozen=True)
@@ -77,7 +83,7 @@ def gbm_growth_rate(
         raise KellyLabError(ReasonCode.NON_FINITE_INPUT, "GBM inputs must be finite")
     fraction, expected_excess_return, volatility, risk_free_rate, borrowing_spread = values
     if volatility < 0:
-        raise KellyLabError(ReasonCode.ZERO_VOLATILITY, "volatility cannot be negative")
+        raise KellyLabError(ReasonCode.INVALID_RETURN, "volatility cannot be negative")
     if borrowing_spread < 0:
         raise KellyLabError(ReasonCode.INVALID_RATE, "borrowing spread cannot be negative")
     return (
@@ -167,7 +173,9 @@ def single_asset_gbm_kelly(
         )
     if borrowing_spread < 0:
         raise KellyLabError(ReasonCode.INVALID_RATE, "borrowing spread cannot be negative")
-    if volatility <= 0:
+    if volatility < 0:
+        raise KellyLabError(ReasonCode.INVALID_RETURN, "volatility cannot be negative")
+    if volatility <= ZERO_VOLATILITY_TOLERANCE:
         return SingleAssetKellyResult(
             theoretical_fraction=None,
             spread_adjusted_fraction=None,
@@ -297,7 +305,9 @@ def historical_log_growth(
     if borrowing_spread < 0:
         raise KellyLabError(ReasonCode.INVALID_RATE, "borrowing spread cannot be negative")
     risk_free_periodic = annual_rate_to_periodic(risk_free_rate, annualization)
-    spread_periodic = annual_rate_to_periodic(borrowing_spread, annualization)
+    spread_periodic = annual_borrowing_spread_to_periodic(
+        risk_free_rate, borrowing_spread, annualization
+    )
     logs: list[float] = []
     for asset_return in values:
         multiplier = (
@@ -383,7 +393,9 @@ def exact_historical_kelly(
         )
 
     risk_free_periodic = annual_rate_to_periodic(risk_free_rate, annualization)
-    spread_periodic = annual_rate_to_periodic(borrowing_spread, annualization)
+    spread_periodic = annual_borrowing_spread_to_periodic(
+        risk_free_rate, borrowing_spread, annualization
+    )
     upper = float(theoretical_search_cap)
     # For f > 1 the multiplier is affine in f.  Find the first ruin boundary.
     for asset_return in values:

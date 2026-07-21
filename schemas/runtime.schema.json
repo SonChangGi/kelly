@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sonchanggi.github.io/kelly/schemas/runtime.schema.json",
+  "title": "Kelly public runtime configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "contract", "workerBaseUrl"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "contract": { "const": "kelly-runtime-config" },
+    "workerBaseUrl": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https://"
+        }
+      ]
+    }
+  }
+}

@@ -3,16 +3,28 @@
   "contract": "kelly-automation-status",
   "projectId": "kelly",
   "state": "unavailable",
-  "generatedAt": "2026-07-21T00:00:00+09:00",
+  "generatedAt": "2026-07-21T14:27:11.713144+00:00",
   "dataAsOf": null,
-  "lastAttemptAt": null,
+  "lastAttemptAt": "2026-07-21T14:27:11.713144+00:00",
   "lastSuccessAt": null,
   "schedule": "weekdays after source-market close",
   "provider": {
-    "name": "twelve_data",
-    "configured": false,
+    "name": "mixed",
+    "configured": true,
     "rightsApproved": false,
-    "normalizedOnly": true
+    "normalizedOnly": true,
+    "providers": [
+      {
+        "name": "krx",
+        "configured": true,
+        "rightsApproved": false
+      },
+      {
+        "name": "twelve_data",
+        "configured": false,
+        "rightsApproved": false
+      }
+    ]
   },
   "publication": {
     "target": "github_pages",
@@ -20,7 +32,7 @@
     "assetCount": 0
   },
   "reasonCodes": [
-    "provider_rights_not_confirmed",
-    "server_secret_not_configured"
+    "krx_public_display_rights_unconfirmed",
+    "twelve_data_rights_or_key_unavailable"
   ]
 }

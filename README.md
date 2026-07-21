@@ -14,7 +14,7 @@ Kelly Allocation Lab은 과거 수익률과 사용자가 입력한 기대값을 
 - 단일자산 GBM Kelly: `f* = e / σ²`
 - 선택기간 일간 수익을 직접 최적화하는 exact in-sample Kelly
 - Quarter / Half / Full Kelly와 절대 1배·2배 비교
-- 다자산 이론값 `Σ⁻¹e`와 장기 전용·총 노출 3배 상한 적용값
+- 다자산 이론값 `Σ⁻¹e`와 롱 전용(long-only)·총 노출 3배 상한 적용값
 - 없음·일·주·월·분기·연 리밸런싱, 편도비용, 회전율, 총/비용/순 효과
 - 해외자산 원통화·KRW 환산과 과거 FX 무선행 결합
 - 합성 고정 2배 경로와 실제 일간목표 레버리지 ETF 경로의 분리
@@ -37,7 +37,12 @@ npm run serve
 ```bash
 uv run kelly-lab assumptions --excess-return 0.06 --volatility 0.20 --risk-free 0.02
 uv run kelly-lab analyze data/assets/etf-spy.json --risk-free 0 --start 2021-01-01 --end 2025-12-31
+uv run kelly-lab analyze data/assets/etf-spy.json --currency krw --fx data/assets/fx-usd-krw.json
+uv run kelly-lab portfolio-history data/assets/etf-spy.json data/assets/etf-qqq.json --fx data/assets/fx-usd-krw.json --risk-free 0.02
+uv run kelly-lab rebalance rebalance-input.json --frequency monthly --cost-bps 10 --risk-free 0.02 --borrowing-spread 0.01
 ```
+
+`rebalance-input.json`은 `dates`, `returnsMatrix`, `targetWeights`를 포함합니다. 정상 계산과 실행 중 계약 오류는 표준 출력에 JSON으로 기록되며, 사용할 수 없는 데이터나 잘못된 입력은 `status=unavailable`과 기계 판독 가능한 `reason`으로 종료됩니다. 명령 자체의 필수 인수 누락이나 알 수 없는 옵션은 `argparse` 사용법 오류로 처리됩니다.
 
 ## 검증
 
@@ -67,7 +72,7 @@ docs/                방법론·공급자·운영 문서
 - Summary: `https://sonchanggi.github.io/kelly/data/summary.json`
 - Worker: `/v1/search`, `/v1/history`, `/v1/fx`, `/v1/health`
 
-Pages와 Worker 배포는 각각 GitHub와 Cloudflare 인증, Twelve Data의 공개 외부표시 권한 확인, 공급자 secret 설정이 완료된 뒤에만 활성화합니다.
+Pages와 Worker 배포는 각각 GitHub와 Cloudflare 인증 뒤에 진행합니다. 시장 데이터는 KRX 또는 Twelve Data의 공개표시 권한과 서버 측 secret이 각각 확인된 공급자만 활성화하며, API 키 보유만으로 공개 권한을 추정하지 않습니다.
 
 ## 계산 원칙
 

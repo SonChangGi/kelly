@@ -3,6 +3,12 @@ name: Deploy Pages
 on:
   push:
     branches: [main]
+  # Commits made by refresh-data with GITHUB_TOKEN do not recursively emit a
+  # push-triggered workflow.  Deploy the validated default-branch snapshot
+  # when that workflow completes, including a diagnostics-only failed run.
+  workflow_run:
+    workflows: ["Refresh validated market data"]
+    types: [completed]
   workflow_dispatch:
 
 permissions:

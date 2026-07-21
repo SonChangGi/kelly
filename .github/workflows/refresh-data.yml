@@ -17,6 +17,8 @@ jobs:
     if: vars.DATA_REFRESH_ENABLED == 'true'
     runs-on: ubuntu-latest
     env:
+      KRX_API_KEY: ${{ secrets.KRX_API_KEY }}
+      KRX_PUBLIC_DISPLAY_APPROVED: ${{ vars.KRX_PUBLIC_DISPLAY_APPROVED }}
       TWELVE_DATA_API_KEY: ${{ secrets.TWELVE_DATA_API_KEY }}
       TWELVE_DATA_EXTERNAL_DISPLAY_APPROVED: ${{ vars.TWELVE_DATA_EXTERNAL_DISPLAY_APPROVED }}
     steps:
@@ -24,13 +26,22 @@ jobs:
         with:
           fetch-depth: 0
       - uses: astral-sh/setup-uv@v6
-      - name: Enforce provider-rights gate
+      - name: Enforce at least one approved provider path
         run: |
+          if test -n "$KRX_API_KEY" && test "$KRX_PUBLIC_DISPLAY_APPROVED" = "true"; then
+            exit 0
+          fi
           test "$TWELVE_DATA_EXTERNAL_DISPLAY_APPROVED" = "true"
           test -n "$TWELVE_DATA_API_KEY"
       - run: uv sync --frozen
       - name: Collect only through the normalized publisher
-        run: uv run python -m kelly_lab.refresh --catalog config/catalog.json
+        id: collect
+        run: |
+          set +e
+          uv run python -m kelly_lab.refresh --catalog config/catalog.json
+          status=$?
+          echo "exit_code=$status" >> "$GITHUB_OUTPUT"
+          exit 0
       - run: uv run python -m kelly_lab.verify
       - name: Commit validated public artifacts
         run: |
@@ -39,3 +50,5 @@ jobs:
           git add data
           git diff --cached --quiet || git commit -m "data: refresh validated market series"
           git push
+      - name: Fail after publishing refresh diagnostics
+        run: test "${{ steps.collect.outputs.exit_code }}" = "0"

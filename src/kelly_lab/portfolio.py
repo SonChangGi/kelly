@@ -9,9 +9,14 @@ from math import expm1, isfinite
 import numpy as np
 
 from .errors import KellyLabError, ReasonCode
-from .metrics import TRADING_DAYS_PER_YEAR, annual_rate_to_periodic
+from .metrics import (
+    TRADING_DAYS_PER_YEAR,
+    annual_borrowing_spread_to_periodic,
+    annual_rate_to_periodic,
+)
 
 MIN_COMMON_OBSERVATIONS = 60
+ZERO_VOLATILITY_TOLERANCE = 1e-12
 
 
 @dataclass(frozen=True)
@@ -68,6 +73,43 @@ def _array(values: Iterable[float], *, name: str) -> np.ndarray:
     return result
 
 
+def _returns_matrix(values: Sequence[Sequence[float | None]]) -> np.ndarray:
+    """Normalize a rectangular return matrix while preserving explicit missing rows.
+
+    ``None`` is the only supported missing marker. Numeric NaN and infinity are
+    invalid observations and must not be silently reclassified as missing data.
+    """
+
+    rows = [list(row) for row in values]
+    if not rows or not rows[0] or any(len(row) != len(rows[0]) for row in rows):
+        raise KellyLabError(
+            ReasonCode.INSUFFICIENT_COMMON_OBSERVATIONS,
+            "returns matrix must be non-empty and rectangular",
+        )
+    normalized: list[list[float]] = []
+    for row in rows:
+        normalized_row: list[float] = []
+        for value in row:
+            if value is None:
+                normalized_row.append(np.nan)
+                continue
+            try:
+                number = float(value)
+            except (TypeError, ValueError) as error:
+                raise KellyLabError(
+                    ReasonCode.NON_FINITE_INPUT,
+                    "numeric returns must be finite; use None for missing observations",
+                ) from error
+            if not isfinite(number):
+                raise KellyLabError(
+                    ReasonCode.NON_FINITE_INPUT,
+                    "numeric returns must be finite; use None for missing observations",
+                )
+            normalized_row.append(number)
+        normalized.append(normalized_row)
+    return np.asarray(normalized, dtype=float)
+
+
 def validate_correlation_matrix(
     matrix: Sequence[Sequence[float]], *, tolerance: float = 1e-10
 ) -> np.ndarray:
@@ -109,6 +151,11 @@ def covariance_from_correlation(
     volatility = _array(volatilities, name="volatilities")
     if np.any(volatility < 0):
         raise KellyLabError(ReasonCode.INVALID_RETURN, "volatilities cannot be negative")
+    if np.any(volatility <= ZERO_VOLATILITY_TOLERANCE):
+        raise KellyLabError(
+            ReasonCode.ZERO_VOLATILITY,
+            "volatilities must exceed the zero-volatility tolerance",
+        )
     correlation_array = validate_correlation_matrix(correlation)
     if correlation_array.shape[0] != volatility.size:
         raise KellyLabError(
@@ -137,6 +184,11 @@ def _validate_covariance(matrix: Sequence[Sequence[float]], size: int) -> np.nda
             ReasonCode.COVARIANCE_NOT_PSD,
             "covariance must be positive semidefinite",
         )
+    if np.any(np.sqrt(np.maximum(np.diag(covariance), 0.0)) <= ZERO_VOLATILITY_TOLERANCE):
+        raise KellyLabError(
+            ReasonCode.ZERO_VOLATILITY,
+            "every asset covariance diagonal must have positive volatility",
+        )
     return covariance
 
 
@@ -148,15 +200,14 @@ def estimate_covariance(
 ) -> CovarianceEstimate:
     """Estimate annual covariance using only fully common finite observations."""
 
-    matrix = np.asarray(
-        [[np.nan if value is None else float(value) for value in row] for row in returns_matrix],
-        dtype=float,
-    )
-    if matrix.ndim != 2 or matrix.shape[1] == 0:
+    if not isfinite(float(annualization)) or annualization <= 0:
+        raise KellyLabError(ReasonCode.INVALID_RATE, "annualization must be positive and finite")
+    if minimum_common_observations < 2:
         raise KellyLabError(
             ReasonCode.INSUFFICIENT_COMMON_OBSERVATIONS,
-            "returns matrix must contain at least one asset",
+            "minimum common observations must be at least two",
         )
+    matrix = _returns_matrix(returns_matrix)
     common = matrix[np.all(np.isfinite(matrix), axis=1)]
     observations = int(common.shape[0])
     if observations < minimum_common_observations:
@@ -170,6 +221,14 @@ def estimate_covariance(
     covariance = np.cov(common, rowvar=False, ddof=1) * annualization
     covariance = np.atleast_2d(covariance)
     standard_deviation = np.sqrt(np.maximum(np.diag(covariance), 0.0))
+    if np.any(standard_deviation <= ZERO_VOLATILITY_TOLERANCE):
+        return CovarianceEstimate(
+            covariance=None,
+            correlation=None,
+            common_observations=observations,
+            status="unavailable",
+            reason=ReasonCode.ZERO_VOLATILITY.value,
+        )
     denominator = np.outer(standard_deviation, standard_deviation)
     with np.errstate(divide="ignore", invalid="ignore"):
         correlation = np.divide(
@@ -375,15 +434,7 @@ def multi_asset_exact_kelly(
 ) -> MultiAssetExactResult:
     """Constrained in-sample exact Kelly for daily common return observations."""
 
-    matrix = np.asarray(
-        [[np.nan if value is None else float(value) for value in row] for row in returns_matrix],
-        dtype=float,
-    )
-    if matrix.ndim != 2 or matrix.shape[1] == 0:
-        raise KellyLabError(
-            ReasonCode.INSUFFICIENT_COMMON_OBSERVATIONS,
-            "returns matrix must contain at least one asset",
-        )
+    matrix = _returns_matrix(returns_matrix)
     matrix = matrix[np.all(np.isfinite(matrix), axis=1)]
     observations, n_assets = matrix.shape
     if observations < minimum_common_observations:
@@ -409,7 +460,9 @@ def multi_asset_exact_kelly(
     if borrowing_spread < 0:
         raise KellyLabError(ReasonCode.INVALID_RATE, "borrowing spread cannot be negative")
     risk_free_periodic = annual_rate_to_periodic(risk_free_rate, annualization)
-    spread_periodic = annual_rate_to_periodic(borrowing_spread, annualization)
+    spread_periodic = annual_borrowing_spread_to_periodic(
+        risk_free_rate, borrowing_spread, annualization
+    )
     excess = matrix - risk_free_periodic
 
     def multipliers(weights: np.ndarray) -> np.ndarray:

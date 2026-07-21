@@ -4,12 +4,12 @@
   "projectId": "kelly",
   "title": "Kelly Allocation Lab",
   "state": "unavailable",
-  "generatedAt": "2026-07-21T00:00:00+09:00",
+  "generatedAt": "2026-07-21T14:27:11.713144+00:00",
   "dataAsOf": null,
   "status": {
     "state": "unavailable",
     "label": "시장 데이터 연결 전",
-    "message": "공급자 이용 권리와 서버 측 API 비밀키가 확인되기 전에는 실데이터 결과를 게시하지 않습니다."
+    "message": "공급자 권한과 서버 측 비밀키가 확인된 데이터만 게시합니다."
   },
   "coverage": {
     "assetCount": 50,

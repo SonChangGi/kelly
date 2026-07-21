@@ -49,6 +49,14 @@ def validate_price_series(
 
     if len(dates) != len(prices):
         issues.append(QualityIssue("COLUMN_LENGTH_MISMATCH", "critical", "dates and prices differ"))
+    if len(dates) < 2:
+        issues.append(
+            QualityIssue(
+                "INSUFFICIENT_OBSERVATIONS",
+                "critical",
+                "at least two daily prices are required for publication",
+            )
+        )
     if parsed and any(
         current <= previous for previous, current in zip(parsed, parsed[1:], strict=False)
     ):

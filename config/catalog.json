@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "contract": "kelly-provider-catalog-config",
-  "catalogVersion": "2026-07-21-v2",
+  "catalogVersion": "2026-07-21-v3",
   "defaultProvider": "twelve_data",
   "assets": [
     {
@@ -46,10 +46,6 @@
       "id": "index-sox",
       "providerSymbol": "SOX",
       "providerExchange": "INDEX",
-      "leveragedProducts": {
-        "long2x": "etf-usd",
-        "inverse2x": "etf-ssg"
-      },
       "symbol": "^SOX",
       "returnBasis": "price_return"
     },
@@ -303,10 +299,6 @@
       "id": "etf-smh",
       "providerSymbol": "SMH",
       "providerExchange": "NASDAQ",
-      "leveragedProducts": {
-        "long2x": "etf-usd",
-        "inverse2x": "etf-ssg"
-      },
       "symbol": "SMH",
       "returnBasis": "total_return_approximation"
     },
@@ -314,10 +306,6 @@
       "id": "etf-soxx",
       "providerSymbol": "SOXX",
       "providerExchange": "NASDAQ",
-      "leveragedProducts": {
-        "long2x": "etf-usd",
-        "inverse2x": "etf-ssg"
-      },
       "symbol": "SOXX",
       "returnBasis": "total_return_approximation"
     },

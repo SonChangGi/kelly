@@ -2,7 +2,12 @@ from __future__ import annotations
 
 from math import isclose
 
-from kelly_lab.metrics import calculate_metrics, maximum_drawdown
+from kelly_lab.metrics import (
+    annual_borrowing_spread_to_periodic,
+    annual_rate_to_periodic,
+    calculate_metrics,
+    maximum_drawdown,
+)
 
 
 def test_maximum_drawdown_is_positive_25_percent() -> None:
@@ -32,6 +37,16 @@ def test_n_plus_one_price_dates_use_full_elapsed_span() -> None:
     assert isclose(result.cagr, expected, rel_tol=1e-12)
 
 
+def test_n_return_dates_use_observation_annualization_not_n_minus_one_span() -> None:
+    result = calculate_metrics(
+        [0.10, -0.10],
+        dates=["2024-01-02", "2024-01-03"],
+    )
+
+    expected = 0.99 ** (252 / 2) - 1.0
+    assert isclose(result.cagr, expected, rel_tol=1e-12)
+
+
 def test_undefined_ratios_have_reason_codes_not_zeroes() -> None:
     result = calculate_metrics(
         [0.01, 0.01],
@@ -53,3 +68,9 @@ def test_non_positive_multiplier_is_ruin() -> None:
     assert result.status == "ruin"
     assert result.cagr is None
     assert result.reasons["cagr"] == "ruin"
+
+
+def test_periodic_borrowing_spread_is_total_borrow_rate_less_cash_rate() -> None:
+    periodic = annual_borrowing_spread_to_periodic(0.05, 0.10, 252)
+    expected = annual_rate_to_periodic(0.15, 252) - annual_rate_to_periodic(0.05, 252)
+    assert isclose(periodic, expected, rel_tol=1e-14)
