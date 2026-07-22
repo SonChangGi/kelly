@@ -3,7 +3,7 @@
   "contract": "kelly-asset-history",
   "state": "published",
   "assetId": "etf-sds",
-  "generatedAt": "2026-07-22T00:07:17.366444+00:00",
+  "generatedAt": "2026-07-22T00:22:29.456153+00:00",
   "dataAsOf": "2026-07-21",
   "metadata": {
     "symbol": "SDS",
@@ -3789,7 +3789,7 @@
     "sourceUrl": "https://finance.yahoo.com/",
     "license": "Yahoo Finance research data; no vendor license asserted",
     "attribution": "Data source: Yahoo Finance chart API",
-    "cachedAt": "2026-07-22T00:07:17.366444+00:00",
+    "cachedAt": "2026-07-22T00:22:29.456153+00:00",
     "contentDigest": "6a7d5f0010455d026b25599d27a4ad1d21375e5acb67280baf063f5524c89935"
   },
   "quality": {

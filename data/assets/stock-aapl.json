@@ -3,7 +3,7 @@
   "contract": "kelly-asset-history",
   "state": "published",
   "assetId": "stock-aapl",
-  "generatedAt": "2026-07-22T00:07:17.366444+00:00",
+  "generatedAt": "2026-07-22T00:22:29.456153+00:00",
   "dataAsOf": "2026-07-21",
   "metadata": {
     "symbol": "AAPL",
@@ -3789,7 +3789,7 @@
     "sourceUrl": "https://finance.yahoo.com/",
     "license": "Yahoo Finance research data; no vendor license asserted",
     "attribution": "Data source: Yahoo Finance chart API",
-    "cachedAt": "2026-07-22T00:07:17.366444+00:00",
+    "cachedAt": "2026-07-22T00:22:29.456153+00:00",
     "contentDigest": "3cdb86e9290964b22acb7cb8990e07448e6fc495b8bc5c1b5cc67990e4d1fef7"
   },
   "quality": {

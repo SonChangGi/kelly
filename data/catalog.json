@@ -3,7 +3,7 @@
   "contract": "kelly-asset-catalog",
   "state": "degraded",
   "catalogVersion": "2026-07-22-v4",
-  "generatedAt": "2026-07-22T00:17:42.961790+00:00",
+  "generatedAt": "2026-07-22T00:22:29.456153+00:00",
   "assetCount": 50,
   "providerPolicy": {
     "providers": [

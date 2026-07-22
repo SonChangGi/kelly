@@ -3,7 +3,7 @@
   "contract": "kelly-asset-history",
   "state": "published",
   "assetId": "stock-mchp",
-  "generatedAt": "2026-07-22T00:07:17.366444+00:00",
+  "generatedAt": "2026-07-22T00:22:29.456153+00:00",
   "dataAsOf": "2026-07-21",
   "metadata": {
     "symbol": "MCHP",
@@ -3789,7 +3789,7 @@
     "sourceUrl": "https://finance.yahoo.com/",
     "license": "Yahoo Finance research data; no vendor license asserted",
     "attribution": "Data source: Yahoo Finance chart API",
-    "cachedAt": "2026-07-22T00:07:17.366444+00:00",
+    "cachedAt": "2026-07-22T00:22:29.456153+00:00",
     "contentDigest": "3fc8283f7e14ae422ea0ed95fdf88a6022bc630a1759a4e2dd7350f9b5eb096a"
   },
   "quality": {
