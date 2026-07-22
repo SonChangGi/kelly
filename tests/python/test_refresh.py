@@ -143,6 +143,39 @@ def test_return_crosscheck_passes_level_rebase_but_rejects_return_mismatch() -> 
     assert _return_difference(primary, mismatched)["state"] == "mismatch"
 
 
+def test_fx_crosscheck_allows_different_daily_fix_times_but_blocks_unit_errors() -> None:
+    dates = tuple(f"2026-01-{day:02d}" for day in range(1, 23))
+    reference_prices = tuple(1500.0 + day for day in range(22))
+    different_fix_prices = tuple(
+        price * (1.003 if index % 2 else 0.997) for index, price in enumerate(reference_prices)
+    )
+    reference = series(dates, reference_prices)
+    different_fix = series(dates, different_fix_prices)
+    wrong_units = series(dates, tuple(price * 100 for price in reference_prices))
+
+    assert _return_difference(reference, different_fix)["state"] == "mismatch"
+    assert (
+        _return_difference(
+            reference,
+            different_fix,
+            median_tolerance=0.012,
+            p99_tolerance=0.06,
+            max_median_level_difference=0.03,
+        )["state"]
+        == "passed"
+    )
+    assert (
+        _return_difference(
+            reference,
+            wrong_units,
+            median_tolerance=0.012,
+            p99_tolerance=0.06,
+            max_median_level_difference=0.03,
+        )["state"]
+        == "mismatch"
+    )
+
+
 class UnavailableCrosscheckProvider:
     def history(self, *_args: object, **_kwargs: object) -> NormalizedPriceSeries:
         raise ProviderUnavailable("FINVIZ_ACCESS_UNAVAILABLE")
@@ -190,6 +223,10 @@ def test_public_reason_codes_are_stable_and_never_serialize_exception_urls() -> 
     assert (
         _reason_code(ValueError("HISTORICAL_DRIFT_BACKFILL_REQUIRED"))
         == "historical_drift_backfill_required"
+    )
+    assert (
+        _reason_code(ProviderUnavailable("INDEPENDENT_SOURCE_MISMATCH"))
+        == "independent_source_mismatch"
     )
 
 

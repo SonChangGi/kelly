@@ -233,6 +233,7 @@ def _reason_code(error: Exception) -> str:
         "STOOQ_",
         "FRED_",
         "FINVIZ_",
+        "INDEPENDENT_",
     )
     if value.startswith(stable_prefixes) and all(
         character.isalnum() or character in {"_", ":", "-"} for character in value
@@ -409,7 +410,12 @@ def _fetch_free_series(
 
 
 def _return_difference(
-    primary: NormalizedPriceSeries, secondary: NormalizedPriceSeries
+    primary: NormalizedPriceSeries,
+    secondary: NormalizedPriceSeries,
+    *,
+    median_tolerance: float = 0.002,
+    p99_tolerance: float = 0.08,
+    max_median_level_difference: float | None = None,
 ) -> dict[str, Any]:
     first = dict(zip(primary.dates, primary.prices, strict=True))
     second = dict(zip(secondary.dates, secondary.prices, strict=True))
@@ -422,15 +428,25 @@ def _return_difference(
             "p99AbsReturnDifference": None,
         }
     differences = []
+    level_differences = []
     for previous, current in zip(common, common[1:], strict=False):
         primary_return = float(first[current]) / float(first[previous]) - 1.0
         secondary_return = float(second[current]) / float(second[previous]) - 1.0
         differences.append(abs(primary_return - secondary_return))
+        level_differences.append(abs(float(first[current]) / float(second[current]) - 1.0))
     ordered = sorted(differences)
     p99_index = min(len(ordered) - 1, int((len(ordered) - 1) * 0.99))
     median = float(statistics.median(ordered))
     p99 = float(ordered[p99_index])
-    state = "passed" if median <= 0.002 and p99 <= 0.08 else "mismatch"
+    level_consistent = (
+        max_median_level_difference is None
+        or statistics.median(level_differences) <= max_median_level_difference
+    )
+    state = (
+        "passed"
+        if median <= median_tolerance and p99 <= p99_tolerance and level_consistent
+        else "mismatch"
+    )
     return {
         "state": state,
         "commonObservations": len(differences),
@@ -487,7 +503,20 @@ def _cross_check(
             asset_type=entry["assetType"],
         )
         secondary = _trim_to_identity_floor(secondary, entry.get("seriesStartFloor"))
-        result = _return_difference(series, secondary)
+        if entry["assetType"] == "fx":
+            # FRED is a New York noon fixing while Yahoo is a tradable-market
+            # snapshot. Their same-date returns can differ modestly even when
+            # direction and units agree, so retain a bounded return tolerance
+            # plus a strict level-ratio guard against inversion or 100x errors.
+            result = _return_difference(
+                series,
+                secondary,
+                median_tolerance=0.012,
+                p99_tolerance=0.06,
+                max_median_level_difference=0.03,
+            )
+        else:
+            result = _return_difference(series, secondary)
         return {"provider": provider_id, **result}
     except (ProviderUnavailable, ProviderResponseError) as error:
         if _reason_code(error) in {

@@ -65,6 +65,10 @@ outliers, and at least 60 returns before Kelly estimation is marked eligible.
 Where an independent source is available, overlapping daily returns are
 compared with bounded median and tail tolerances. A mismatch blocks that
 candidate; an unavailable check is disclosed rather than presented as a pass.
+For USD/KRW, FRED's New York noon fixing and Yahoo's market snapshot use
+different daily fix times, so the comparison uses a wider but bounded return
+tolerance together with a 3% median level-ratio guard. The level guard rejects
+inversion and 100x unit errors even when scaled returns would otherwise match.
 
 Incremental refreshes may rebase newly appended adjusted-price levels when
 overlapping returns remain stable. A genuine historical return revision may not
