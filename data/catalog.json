@@ -3,7 +3,7 @@
   "contract": "kelly-asset-catalog",
   "state": "degraded",
   "catalogVersion": "2026-07-22-v4",
-  "generatedAt": "2026-07-22T00:09:26.834573+00:00",
+  "generatedAt": "2026-07-22T00:17:42.961790+00:00",
   "assetCount": 50,
   "providerPolicy": {
     "providers": [
@@ -1255,7 +1255,7 @@
       "exchange": "FX",
       "currency": "KRW",
       "timezone": "UTC",
-      "status": "degraded",
+      "status": "published",
       "provider": {
         "provider": "fred",
         "symbol": "DEXKOUS",
@@ -1269,7 +1269,7 @@
       "dataPath": "assets/fx-usd-krw.json",
       "returnBasis": "fx_rate",
       "availableFrom": "2021-07-22",
-      "availableTo": "2026-07-22"
+      "availableTo": "2026-07-17"
     }
   ]
 }
