@@ -3,7 +3,7 @@
   "contract": "kelly-asset-history",
   "state": "published",
   "assetId": "etf-ssg",
-  "generatedAt": "2026-07-22T00:38:16.921758+00:00",
+  "generatedAt": "2026-07-22T00:40:41.751018+00:00",
   "dataAsOf": "2026-07-21",
   "metadata": {
     "symbol": "SSG",
@@ -3789,7 +3789,7 @@
     "sourceUrl": "https://finance.yahoo.com/",
     "license": "Yahoo Finance research data; no vendor license asserted",
     "attribution": "Data source: Yahoo Finance chart API",
-    "cachedAt": "2026-07-22T00:38:16.921758+00:00",
+    "cachedAt": "2026-07-22T00:40:41.751018+00:00",
     "contentDigest": "b0299ca4c312f725f688570e3de65d7a90f68a808594f28e950791d16ace3e1c"
   },
   "quality": {
@@ -3798,17 +3798,16 @@
     "minimumKellyObservations": 60,
     "crossCheck": {
       "provider": "finviz",
-      "state": "unavailable",
-      "commonObservations": 0,
-      "windowStart": null,
-      "windowEnd": null,
-      "medianAbsReturnDifference": null,
-      "p99AbsReturnDifference": null
+      "state": "passed",
+      "commonObservations": 23,
+      "windowStart": "2026-06-16",
+      "windowEnd": "2026-07-21",
+      "medianAbsReturnDifference": 2.0687199064894912e-08,
+      "p99AbsReturnDifference": 6.31843541931687e-08
     }
   },
   "limitations": [
-    "Adjusted daily close is a total-return approximation; taxes, slippage, and financing are excluded.",
-    "independent_crosscheck_unavailable"
+    "Adjusted daily close is a total-return approximation; taxes, slippage, and financing are excluded."
   ],
   "fx": {
     "pair": "USD/KRW",
