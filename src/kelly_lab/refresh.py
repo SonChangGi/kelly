@@ -854,8 +854,11 @@ def refresh(
             _provider_id(entry) == "krx" and entry["status"] == "unavailable"
             for entry in public_catalog["assets"]
         )
-        if unavailable_krx and not krx_provider.configured:
-            failures.append("krx_api_key_unavailable")
+        if unavailable_krx:
+            if not krx_provider.configured:
+                failures.append("krx_api_key_unavailable")
+            if not krx_provider.rights_approved:
+                failures.append("krx_public_display_rights_unconfirmed")
     automation.update(
         {
             "state": state,
