@@ -7,7 +7,7 @@ on:
   # push-triggered workflow.  Deploy the validated default-branch snapshot
   # when that workflow completes, including a diagnostics-only failed run.
   workflow_run:
-    workflows: ["Refresh validated market data"]
+    workflows: ["Refresh validated market data", "Refresh expanded US universe"]
     types: [completed]
   workflow_dispatch:
 

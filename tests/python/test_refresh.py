@@ -279,6 +279,63 @@ class DisabledTwelveProvider:
     rights_approved = False
 
 
+class NeverCalledProvider:
+    def __init__(self) -> None:
+        self.calls = 0
+
+    def history(self, *_args: object, **_kwargs: object) -> NormalizedPriceSeries:
+        self.calls += 1
+        raise AssertionError("provider must not be called")
+
+
+class FakeFredProvider:
+    def __init__(self) -> None:
+        self.calls = 0
+
+    def history(self, *_args: object, **_kwargs: object) -> NormalizedPriceSeries:
+        self.calls += 1
+        return NormalizedPriceSeries(
+            symbol="USD/KRW",
+            dates=("2026-07-17", "2026-07-20"),
+            prices=(1380.0, 1385.0),
+            currency="KRW",
+            exchange="FX",
+            timezone="UTC",
+            return_basis="fx_rate",
+            provider="FRED DEXKOUS",
+            source_url="https://fred.stlouisfed.org/series/DEXKOUS",
+            attribution="Federal Reserve Bank of St. Louis",
+        )
+
+
+class FakeYahooProvider:
+    def __init__(self) -> None:
+        self.calls = 0
+
+    def history(self, *_args: object, **_kwargs: object) -> NormalizedPriceSeries:
+        self.calls += 1
+        return total_return_series(
+            ("2026-07-17", "2026-07-20"),
+            (200.0, 204.0),
+        )
+
+
+class FakeFinvizProvider:
+    def history(self, *_args: object, **_kwargs: object) -> NormalizedPriceSeries:
+        return NormalizedPriceSeries(
+            symbol="AAPL",
+            dates=("2026-07-17", "2026-07-20"),
+            prices=(200.0, 204.0),
+            currency="USD",
+            exchange="NASDAQ",
+            timezone="America/New_York",
+            return_basis="price_return",
+            provider="Finviz",
+            source_url="https://finviz.com/quote.ashx?t=AAPL",
+            attribution="Finviz cross-check",
+        )
+
+
 def write_json(path: Path, value: object) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(value), encoding="utf-8")
@@ -336,6 +393,225 @@ def published_asset(asset_id: str = "kr-005930", symbol: str = "005930.KS") -> d
         }
     )
     return document
+
+
+def test_selected_yahoo_core_fails_before_provider_calls_or_public_writes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    entry = {
+        "id": "stock-aapl",
+        "symbol": "AAPL",
+        "assetType": "equity",
+        "exchange": "NASDAQ",
+        "currency": "USD",
+        "timezone": "America/New_York",
+        "provider": {
+            "provider": "yahoo_finance",
+            "symbol": "AAPL",
+            "exchange": "NASDAQ",
+        },
+        "dataPath": "assets/stock-aapl.json",
+        "returnBasis": "total_return_approximation",
+    }
+    catalog_path = tmp_path / "data/catalog.json"
+    config_path = tmp_path / "config/catalog.json"
+    write_json(catalog_path, {"assets": [entry], "state": "published"})
+    write_json(config_path, {"assets": [{"id": "stock-aapl"}]})
+    before = {
+        path.relative_to(tmp_path): path.read_bytes()
+        for path in tmp_path.rglob("*")
+        if path.is_file()
+    }
+    yahoo = NeverCalledProvider()
+    fdr = NeverCalledProvider()
+    monkeypatch.delenv("YAHOO_PUBLIC_DISPLAY_APPROVED", raising=False)
+
+    with pytest.raises(ProviderUnavailable, match="^YAHOO_PUBLIC_DISPLAY_RIGHTS_UNCONFIRMED$"):
+        refresh(
+            tmp_path,
+            config_path,
+            asset_ids={"stock-aapl"},
+            yahoo_provider=yahoo,  # type: ignore[arg-type]
+            fdr_provider=fdr,  # type: ignore[arg-type]
+        )
+
+    after = {
+        path.relative_to(tmp_path): path.read_bytes()
+        for path in tmp_path.rglob("*")
+        if path.is_file()
+    }
+    assert yahoo.calls == 0
+    assert fdr.calls == 0
+    assert after == before
+
+
+def test_explicit_yahoo_approval_allows_core_refresh_and_records_rights(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    entry = {
+        "id": "stock-aapl",
+        "symbol": "AAPL",
+        "name": "Apple Inc.",
+        "nameKo": "애플",
+        "assetType": "equity",
+        "exchange": "NASDAQ",
+        "currency": "USD",
+        "timezone": "America/New_York",
+        "status": "unavailable",
+        "provider": {
+            "provider": "yahoo_finance",
+            "symbol": "AAPL",
+            "exchange": "NASDAQ",
+        },
+        "searchTerms": ["AAPL"],
+        "dataPath": "assets/stock-aapl.json",
+        "returnBasis": "total_return_approximation",
+        "availableFrom": None,
+        "availableTo": None,
+    }
+    existing = unavailable_asset("stock-aapl", "AAPL")
+    existing["metadata"] = {
+        "symbol": "AAPL",
+        "assetType": "equity",
+        "exchange": "NASDAQ",
+        "timezone": "America/New_York",
+        "returnBasis": "total_return_approximation",
+        "baseCurrency": "USD",
+    }
+    write_json(tmp_path / "data/catalog.json", {"assets": [entry], "state": "unavailable"})
+    write_json(tmp_path / "config/catalog.json", {"assets": [{"id": "stock-aapl"}]})
+    write_json(tmp_path / "data/assets/stock-aapl.json", existing)
+    write_json(
+        tmp_path / "data/summary.json",
+        {
+            "state": "unavailable",
+            "status": {},
+            "coverage": {"availableAssetCount": 0},
+            "primaryEntities": [],
+        },
+    )
+    write_json(
+        tmp_path / "data/automation-status.json",
+        {
+            "state": "unavailable",
+            "lastSuccessAt": None,
+            "provider": {"normalizedOnly": True},
+            "publication": {"assetCount": 0, "latestPublishedAt": None},
+        },
+    )
+    yahoo = FakeYahooProvider()
+    fdr = NeverCalledProvider()
+    monkeypatch.setenv("YAHOO_PUBLIC_DISPLAY_APPROVED", "true")
+
+    count = refresh(
+        tmp_path,
+        tmp_path / "config/catalog.json",
+        backfill=True,
+        start=date(2026, 7, 17),
+        end=date(2026, 7, 20),
+        asset_ids={"stock-aapl"},
+        krx_provider=FakeKrxProvider(),
+        twelve_provider=DisabledTwelveProvider(),
+        yahoo_provider=yahoo,  # type: ignore[arg-type]
+        fdr_provider=fdr,  # type: ignore[arg-type]
+        stooq_provider=NeverCalledProvider(),  # type: ignore[arg-type]
+        fred_provider=NeverCalledProvider(),  # type: ignore[arg-type]
+        finviz_provider=FakeFinvizProvider(),  # type: ignore[arg-type]
+    )
+
+    document = json.loads((tmp_path / "data/assets/stock-aapl.json").read_text(encoding="utf-8"))
+    automation = json.loads((tmp_path / "data/automation-status.json").read_text(encoding="utf-8"))
+    providers = {item["name"]: item for item in automation["provider"]["providers"]}
+    assert count == 1
+    assert yahoo.calls == 1
+    assert fdr.calls == 0
+    assert document["state"] == "published"
+    assert document["source"]["provider"] == "yahoo_finance"
+    assert providers["yahoo_finance"]["rightsApproved"] is True
+    assert providers["finance_data_reader"]["rightsApproved"] is True
+
+
+def test_targeted_fred_refresh_does_not_require_or_call_yahoo(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    entry = {
+        "id": "fx-usd-krw",
+        "symbol": "USD/KRW",
+        "name": "US Dollar / Korean Won",
+        "nameKo": "미국 달러/원 환율",
+        "assetType": "fx",
+        "exchange": "FX",
+        "currency": "KRW",
+        "timezone": "UTC",
+        "status": "unavailable",
+        "provider": {"provider": "fred", "symbol": "DEXKOUS", "exchange": "FX"},
+        "searchTerms": ["USD/KRW"],
+        "dataPath": "assets/fx-usd-krw.json",
+        "returnBasis": "fx_rate",
+        "availableFrom": None,
+        "availableTo": None,
+    }
+    existing = unavailable_asset("fx-usd-krw", "USD/KRW")
+    existing["metadata"] = {
+        "symbol": "USD/KRW",
+        "assetType": "fx",
+        "exchange": "FX",
+        "timezone": "UTC",
+        "returnBasis": "fx_rate",
+        "baseCurrency": "USD",
+        "quoteCurrency": "KRW",
+    }
+    write_json(tmp_path / "data/catalog.json", {"assets": [entry], "state": "unavailable"})
+    write_json(tmp_path / "config/catalog.json", {"assets": [{"id": "fx-usd-krw"}]})
+    write_json(tmp_path / "data/assets/fx-usd-krw.json", existing)
+    write_json(
+        tmp_path / "data/summary.json",
+        {
+            "state": "unavailable",
+            "status": {},
+            "coverage": {"availableAssetCount": 0},
+            "primaryEntities": [],
+        },
+    )
+    write_json(
+        tmp_path / "data/automation-status.json",
+        {
+            "state": "unavailable",
+            "lastSuccessAt": None,
+            "provider": {"normalizedOnly": True},
+            "publication": {"assetCount": 0, "latestPublishedAt": None},
+        },
+    )
+    fred = FakeFredProvider()
+    yahoo = NeverCalledProvider()
+    fdr = NeverCalledProvider()
+    stooq = NeverCalledProvider()
+    monkeypatch.delenv("YAHOO_PUBLIC_DISPLAY_APPROVED", raising=False)
+
+    count = refresh(
+        tmp_path,
+        tmp_path / "config/catalog.json",
+        backfill=True,
+        start=date(2026, 7, 17),
+        end=date(2026, 7, 20),
+        asset_ids={"fx-usd-krw"},
+        krx_provider=FakeKrxProvider(),
+        twelve_provider=DisabledTwelveProvider(),
+        yahoo_provider=yahoo,  # type: ignore[arg-type]
+        fdr_provider=fdr,  # type: ignore[arg-type]
+        stooq_provider=stooq,  # type: ignore[arg-type]
+        fred_provider=fred,  # type: ignore[arg-type]
+        finviz_provider=NeverCalledProvider(),  # type: ignore[arg-type]
+    )
+
+    document = json.loads((tmp_path / "data/assets/fx-usd-krw.json").read_text(encoding="utf-8"))
+    assert count == 1
+    assert document["state"] == "published"
+    assert document["source"]["provider"] == "fred"
+    assert fred.calls == 1
+    assert yahoo.calls == 0
+    assert fdr.calls == 0
+    assert stooq.calls == 0
 
 
 def test_rights_revocation_removes_previously_published_observations() -> None:

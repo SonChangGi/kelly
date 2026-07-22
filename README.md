@@ -6,7 +6,7 @@ Kelly Allocation Lab은 과거 수익률과 사용자가 입력한 기대값을 
 
 ## 현재 공개 데이터 상태
 
-정적 카탈로그 50개 중 해외 주식·ETF·지수·환율 48개는 API 키가 필요 없는 연구용 수집 경로로 갱신합니다. Yahoo Chart가 미국 주식·ETF의 배당·분할 조정값과 지수의 종가를 제공하고, FinanceDataReader는 같은 Yahoo 경로의 어댑터 대체 수단으로만 사용합니다. Stooq와 FRED는 독립 가격·환율 확인 또는 대체 경로이고, Finviz 값은 최근 구간 교차검증에만 쓰며 공개 파일에 복제하지 않습니다.
+정적 카탈로그 50개 중 해외 주식·ETF·지수·환율 48개는 API 키가 필요 없는 연구용 수집 경로로 갱신합니다. Yahoo Chart가 미국 주식·ETF의 배당·분할 조정값과 지수의 종가를 제공하고, FinanceDataReader는 같은 Yahoo 경로의 어댑터 대체 수단으로만 사용합니다. Stooq와 FRED는 독립 가격·환율 확인 또는 대체 경로이고, Finviz 값은 최근 구간 교차검증에만 쓰며 공개 파일에 복제하지 않습니다. Yahoo 계열 정적 파일의 공개 갱신은 API secret 대신 운영자가 권한 검토를 마쳤음을 나타내는 `YAHOO_PUBLIC_DISPLAY_APPROVED=true`를 요구합니다.
 
 한국 주식 2개는 KRX 공식 Open API만 사용합니다. `KRX_API_KEY`와 명시적 `KRX_PUBLIC_DISPLAY_APPROVED=true` 중 하나라도 없으면 이 두 종목만 사유 코드와 함께 `unavailable`로 남고, 나머지 무료 소스 갱신은 계속됩니다. 현재 관측 수, 출처, 수익률 기준, 교차검증 결과는 각 자산 JSON과 화면에서 확인할 수 있습니다. 직접 가정 모드는 공급자 없이 브라우저에서 완전히 계산됩니다.
 
@@ -49,13 +49,76 @@ uv run kelly-lab rebalance rebalance-input.json --frequency monthly --cost-bps 1
 정적 시장 데이터 갱신 예시:
 
 ```bash
-uv run python -m kelly_lab.refresh --catalog config/catalog.json
-uv run python -m kelly_lab.refresh --catalog config/catalog.json --backfill --start 2021-01-01
+YAHOO_PUBLIC_DISPLAY_APPROVED=true uv run python -m kelly_lab.refresh --catalog config/catalog.json
+YAHOO_PUBLIC_DISPLAY_APPROVED=true uv run python -m kelly_lab.refresh --catalog config/catalog.json --backfill --start 2021-01-01
 uv run python -m kelly_lab.verify
 ```
 
 일반 갱신은 검증된 기존 이력을 보존하면서 새 관측치를 붙입니다. 교차검증 통계의 `windowStart`·`windowEnd`는 해당 갱신에서 실제로 비교한 구간이며, 증분 갱신에서는 전체 저장 이력보다 짧을 수 있습니다. 공급자의 과거 조정값이 바뀌었거나 시작일을 다시 잡아야 할 때만 명시적으로 `--backfill`을 사용합니다.
 특정 종목만 다시 만들 때는 `--asset-id stock-aapl`을 붙이며 여러 종목은 이 옵션을 반복합니다.
+
+### 코어 50개 밖의 미국 종목
+
+사용자가 입력한 미국 상장 주식·ETF는 잠긴 50개 카탈로그를 변경하지 않고 별도 캐시에
+수집할 수 있습니다. 기본값은 최근 5년 이내 Yahoo 조정종가이며, 결과는 Git에서 제외되는
+`var/dynamic-assets/`에 저장됩니다.
+
+```bash
+uv run kelly-lab fetch-us COST
+uv run kelly-lab fetch-us BRK-B --start 2023-01-01 --end 2026-07-21
+uv run kelly-lab analyze var/dynamic-assets/dynamic-us-cost.json --risk-free 0.02
+```
+
+기본 250개 로컬 캐시를 타이핑형 웹 UI에서 사용할 때는 공개 데이터 폴더가 아닌 별도
+`dist-local/` 산출물을 만듭니다. 이 경로는 Git에서 제외되며 Pages 배포용 `dist/` 안에는
+들어갈 수 없습니다.
+
+```bash
+uv run kelly-lab fetch-us-batch --count 250 --cache-scope local
+make serve-local
+# http://127.0.0.1:8766
+```
+
+`fetch-us`는 Yahoo가 돌려준 통화·거래소·자산 유형을 확인해 USD 표시 미국 주식과 ETF만
+허용하고 v1 제외 범위인 3배·역3배 상품은 거부합니다. 조정종가가 없으면 동일 Yahoo
+계보인 FinanceDataReader까지만 대체하며,
+가격수익률뿐인 Stooq 값을 총수익률 근사로 바꾸어 붙이지 않습니다. 원종가 분석을 명시한
+`--basis price`에서만 Stooq가 주 시계열 대체가 될 수 있습니다.
+기존 캐시는 최근 35일 겹침의 확정 수익률을 검증한 뒤 새 관측치만 붙입니다. 과거 수익률,
+수익률 기준 또는 요청 시작기간이 달라지면 기존 파일을 보존하고 중단하며, 검토 후에만
+`--backfill`로 전체 이력을 다시 만듭니다. Preferred share·unit·warrant·right·debt로
+명확히 식별되는 비보통주 증권은 자동 확장 목록에서 제외합니다.
+
+검토 후 정적 Pages 빌드에 포함할 캐시는 명시적으로 선택합니다.
+
+```bash
+YAHOO_PUBLIC_DISPLAY_APPROVED=true uv run kelly-lab fetch-us COST --cache-scope public
+YAHOO_PUBLIC_DISPLAY_APPROVED=true uv run kelly-lab fetch-us-batch --count 250 --cache-scope public
+YAHOO_PUBLIC_DISPLAY_APPROVED=true uv run kelly-lab fetch-us-batch --count 250 --cache-scope public --backfill
+YAHOO_PUBLIC_DISPLAY_APPROVED=true uv run kelly-lab fetch-us-batch --universe file --symbols-file tickers.txt --count 50
+```
+
+이 경우 역사 파일은 `data/dynamic-assets/`, 발견 목록은 `data/dynamic-catalog.json`에만
+쓰이며 `data/catalog.json`, `config/catalog.json`, `data/assets/`의 코어 계약은 바뀌지
+않습니다. 공개 단건은
+`data/dynamic-catalog.json`에 안전하게 upsert되어 웹 검색에서 발견할 수 있습니다. 배치 기본값은
+Nasdaq 공식 스크리너에서 시가총액 순 후보를 읽고, 그 목록이 막힌 경우에만
+FinanceDataReader의 NASDAQ·NYSE·AMEX 목록으로 전환합니다. FDR 대체 목록에는 비교 가능한
+거래소 통합 시가총액이 없으므로 시가총액 순위라고 표시하지 않습니다.
+
+배치는 코어와 중복되는 미국 종목을 제외하고 최대 500개를 허용합니다. 종목별 실패를
+격리하되 전체 시도 상한과 연속 공급자 장애 회로 차단을 적용합니다. 일부 갱신 실패 시에는
+검증된 기존 파일만 `preservedCount`로 보존하고, `freshCount`를 별도로 기록합니다. 성공한
+manifest 교체 뒤에는 전용 디렉터리의 미참조 `dynamic-us-*.json` 정규 파일만 정리하며 다른
+파일이나 심볼릭 링크는 건드리지 않습니다.
+
+무료 접근 가능 여부와 공개 표시·재배포 권한은 같은 의미가 아닙니다. 따라서
+`--cache-scope public`은 운영자가 현재 적용되는 약관과 권한을 확인한 뒤
+`YAHOO_PUBLIC_DISPLAY_APPROVED=true`를 명시한 경우에만 네트워크 수집을 시작합니다. 이 값은
+API 키가 아니라 운영 승인 게이트입니다. 승인하지 않은 환경에서도 기본 local 캐시는 그대로
+사용할 수 있으며 공개 파일은 생성하지 않습니다. 공개 사용 책임과 출처 고지는 운영자에게
+남습니다. 신뢰할 수 있는 무료 전체 미국 종목 메타데이터 목록을 하드코딩하지 않고,
+각 요청마다 실제 공급자 메타데이터로 종목 정체성을 확인합니다.
 
 ## 검증
 
@@ -73,7 +136,7 @@ src/kelly_lab/       Python 기준 계산·검증·정적 빌드·CLI
 site/                GitHub Pages UI와 브라우저 계산 엔진
 data/                정규화된 공개 정적 계약
 schemas/             JSON Schema 계약
-worker/              라이선스 확인형 Cloudflare Worker
+worker/              키 없는 미국 티커 조회와 선택적 FX용 Cloudflare Worker
 tests/python/        수학·경계·데이터 테스트
 tests/js/            브라우저 엔진·UI 상태 테스트
 docs/                방법론·공급자·운영 문서
@@ -85,7 +148,7 @@ docs/                방법론·공급자·운영 문서
 - Summary: `https://sonchanggi.github.io/kelly/data/summary.json`
 - Worker: `/v1/search`, `/v1/history`, `/v1/fx`, `/v1/health`
 
-Pages의 정적 데이터 갱신은 평일 예약 실행과 수동 실행을 모두 지원합니다. 무료 해외 소스에는 secret이 필요하지 않으며 KRX 키는 선택 사항입니다. KRX 공개 게시에는 키와 외부표시 확인 변수가 모두 필요합니다. Cloudflare Worker와 Twelve Data 즉시조회 경로는 이 정적 수집과 분리된 선택 기능으로, 서버 측 secret과 별도 권한 확인 없이는 `unavailable`을 유지합니다.
+Pages의 정적 데이터 갱신은 평일 예약 실행과 수동 실행을 모두 지원합니다. 무료 해외 소스에는 API secret이 필요하지 않지만 Yahoo 계열 공개 갱신은 별도 권한 확인 변수가 필요하며, KRX 키는 선택 사항입니다. KRX 공개 게시에는 키와 외부표시 확인 변수가 모두 필요합니다. 선택적 Cloudflare Worker의 미국 티커 검색·이력도 Yahoo 메타데이터 검증과 `YAHOO_PUBLIC_DISPLAY_APPROVED=true`가 함께 있어야 활성화됩니다. Worker의 USD/KRW Twelve Data 경로는 서버 측 secret과 별도 외부표시 권한이 없으면 `unavailable`을 유지합니다.
 
 ## 계산 원칙
 

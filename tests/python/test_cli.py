@@ -75,6 +75,32 @@ def test_assumptions_propagates_unavailable_status_and_exit_code(capsys) -> None
     assert output["result"]["status"] == "unavailable"  # type: ignore[index]
 
 
+def test_fetch_us_batch_rejects_out_of_bounds_count_before_network(capsys) -> None:
+    exit_code = main(["fetch-us-batch", "--count", "0"])
+    output = _read_output(capsys)
+
+    assert exit_code == 2
+    assert output["mode"] == "dynamic_us_batch"
+    assert output["status"] == "unavailable"
+    assert output["reason"] == "invalid_batch_count"
+
+
+def test_public_dynamic_cli_requires_explicit_display_approval(
+    capsys,
+    monkeypatch,
+) -> None:
+    monkeypatch.delenv("YAHOO_PUBLIC_DISPLAY_APPROVED", raising=False)
+
+    single_exit = main(["fetch-us", "COST", "--cache-scope", "public"])
+    single = _read_output(capsys)
+    batch_exit = main(["fetch-us-batch", "--count", "1", "--cache-scope", "public"])
+    batch = _read_output(capsys)
+
+    assert single_exit == batch_exit == 2
+    assert single["reason"] == "public_display_approval_required"
+    assert batch["reason"] == "public_display_approval_required"
+
+
 def test_analyze_rejects_nonpositive_price_in_claimed_available_asset(
     tmp_path: Path, capsys
 ) -> None:

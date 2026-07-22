@@ -5,6 +5,7 @@ import bisect
 import hashlib
 import json
 import math
+import re
 import subprocess
 import time
 import urllib.parse
@@ -15,6 +16,7 @@ from typing import Any
 
 from jsonschema import Draft202012Validator, FormatChecker
 
+from .dynamic_assets import EXCLUDED_3X_SYMBOLS, is_non_common_security_name
 from .security import scan_public_files
 
 SCHEMA_FILES = {
@@ -22,6 +24,7 @@ SCHEMA_FILES = {
     "catalog": "catalog.schema.json",
     "automation": "automation-status.schema.json",
     "asset": "asset.schema.json",
+    "dynamic_catalog": "dynamic-catalog.schema.json",
     "price_series": "kelly-price-series.schema.json",
     "runtime": "runtime.schema.json",
     "provider_config": "provider-catalog-config.schema.json",
@@ -33,6 +36,7 @@ DATA_FILES = {
 }
 RUNTIME_FILE = "data/runtime.json"
 PROVIDER_CONFIG_FILE = "config/catalog.json"
+DYNAMIC_CATALOG_FILE = "data/dynamic-catalog.json"
 ALLOWED_STATES = {"published", "live_api", "stale", "degraded", "unavailable", "ruin"}
 DATA_BEARING_STATES = {"published", "live_api", "stale", "degraded"}
 FX_MAX_STALENESS_DAYS = 5
@@ -348,6 +352,225 @@ def _validate_asset_against_catalog(asset: dict[str, Any], asset_document: dict[
     _validate_fx_block(asset, asset_document, dates)
 
 
+def _dynamic_content_digest(document: dict[str, Any]) -> str:
+    payload = "\n".join(
+        f"{day}:{float(price):.12g}"
+        for day, price in zip(document["dates"], document["prices"], strict=True)
+    )
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def _validate_dynamic_asset(
+    entry: dict[str, Any] | None,
+    document: dict[str, Any],
+) -> None:
+    """Validate intrinsic dynamic history and optional manifest projection."""
+
+    asset_id = document["assetId"]
+    metadata = document["metadata"]
+    source = document["source"]
+    quality = document.get("quality")
+    dates = document["dates"]
+    prices = document["prices"]
+    returns = document["returns"]
+    if metadata.get("catalogScope") != "dynamic":
+        raise ValueError(f"dynamic catalog scope mismatch for {asset_id}")
+    symbol = metadata.get("symbol", "")
+    expected_id = "dynamic-us-" + re.sub(r"[^a-z0-9]+", "-", symbol.lower()).strip("-")
+    if asset_id != expected_id:
+        raise ValueError(f"dynamic asset id/symbol mismatch for {asset_id}")
+
+    def identity(value: object) -> str:
+        return "".join(character for character in str(value or "").upper() if character.isalnum())
+
+    if identity(metadata.get("providerSymbol")) != identity(symbol):
+        raise ValueError(f"dynamic provider symbol mismatch for {asset_id}")
+    expected_instrument_type = "EQUITY" if metadata.get("assetType") == "equity" else "ETF"
+    if metadata.get("instrumentType") != expected_instrument_type:
+        raise ValueError(f"dynamic instrument type mismatch for {asset_id}")
+    observed_name = str(metadata.get("displayName") or "").upper()
+    if metadata.get("assetType") == "equity" and (
+        is_non_common_security_name(observed_name)
+        or (entry is not None and is_non_common_security_name(entry.get("name")))
+    ):
+        raise ValueError(f"dynamic non-common security is excluded for {asset_id}")
+    if metadata.get("assetType") == "etf" and (
+        symbol in EXCLUDED_3X_SYMBOLS
+        or "ULTRAPRO" in observed_name
+        or re.search(r"(?<![0-9])3\s*X(?![0-9])", observed_name)
+    ):
+        raise ValueError(f"dynamic 3x product is excluded for {asset_id}")
+    if document["state"] not in DATA_BEARING_STATES:
+        raise ValueError(f"dynamic asset must contain a usable state: {asset_id}")
+    if not (len(dates) == len(prices) == len(returns)) or len(dates) < 2:
+        raise ValueError(f"dynamic column length mismatch for {asset_id}")
+    if dates != sorted(set(dates)):
+        raise ValueError(f"dynamic dates must be sorted and unique for {asset_id}")
+    if any(
+        isinstance(price, bool)
+        or not isinstance(price, int | float)
+        or not math.isfinite(price)
+        or price <= 0
+        for price in prices
+    ):
+        raise ValueError(f"dynamic prices must be positive and finite for {asset_id}")
+    if returns[0] is not None:
+        raise ValueError(f"dynamic first return must be null for {asset_id}")
+    for index in range(1, len(prices)):
+        expected = prices[index] / prices[index - 1] - 1.0
+        actual = returns[index]
+        if (
+            isinstance(actual, bool)
+            or not isinstance(actual, int | float)
+            or not math.isfinite(actual)
+            or abs(actual - expected) > 1e-10
+        ):
+            raise ValueError(f"dynamic price/return mismatch for {asset_id} at {dates[index]}")
+    if document["dataAsOf"] != dates[-1]:
+        raise ValueError(f"dynamic dataAsOf/last date mismatch for {asset_id}")
+    try:
+        first = date.fromisoformat(dates[0])
+        last = date.fromisoformat(dates[-1])
+    except ValueError as error:
+        raise ValueError(f"dynamic date invalid for {asset_id}") from error
+    if (last - first).days > 1827:
+        raise ValueError(f"dynamic history exceeds five-year bound for {asset_id}")
+    if last > date.today():
+        raise ValueError(f"dynamic history contains a future date for {asset_id}")
+    first_trade_date = metadata.get("firstTradeDate")
+    if first_trade_date is not None and date.fromisoformat(first_trade_date) > first:
+        raise ValueError(f"dynamic first-trade boundary mismatch for {asset_id}")
+    if not isinstance(quality, dict) or quality.get("observationCount") != len(dates):
+        raise ValueError(f"dynamic quality observation count mismatch for {asset_id}")
+    expected_eligible = len(returns) - 1 >= quality["minimumKellyObservations"]
+    if quality.get("eligibleForKelly") is not expected_eligible:
+        raise ValueError(f"dynamic Kelly eligibility mismatch for {asset_id}")
+    cross_check = quality["crossCheck"]
+    if cross_check["state"] == "mismatch":
+        raise ValueError(f"dynamic cross-check mismatch for {asset_id}")
+    if cross_check["state"] == "passed":
+        if cross_check["commonObservations"] < 20:
+            raise ValueError(f"dynamic passed cross-check is too short for {asset_id}")
+        window_start = cross_check["windowStart"]
+        window_end = cross_check["windowEnd"]
+        if (
+            not isinstance(window_start, str)
+            or not isinstance(window_end, str)
+            or window_start > window_end
+            or window_start < dates[0]
+            or window_end > dates[-1]
+        ):
+            raise ValueError(f"dynamic cross-check window mismatch for {asset_id}")
+    if source.get("contentDigest") != _dynamic_content_digest(document):
+        raise ValueError(f"dynamic content digest mismatch for {asset_id}")
+    if metadata.get("baseCurrency") != "USD":
+        raise ValueError(f"dynamic base currency mismatch for {asset_id}")
+    if metadata.get("assetType") not in {"equity", "etf"}:
+        raise ValueError(f"dynamic asset type mismatch for {asset_id}")
+    if metadata.get("timezone") != "America/New_York":
+        raise ValueError(f"dynamic timezone mismatch for {asset_id}")
+    if source["provider"] == "yahoo_finance":
+        if source.get("adapter") not in {"native", "finance_data_reader"}:
+            raise ValueError(f"dynamic Yahoo adapter mismatch for {asset_id}")
+    elif source["provider"] == "stooq":
+        if source.get("adapter") != "native" or metadata["returnBasis"] != "price_return":
+            raise ValueError(f"dynamic Stooq semantics mismatch for {asset_id}")
+    else:
+        raise ValueError(f"dynamic source provider mismatch for {asset_id}")
+
+    if entry is None:
+        return
+    expected_projection = {
+        "id": asset_id,
+        "symbol": metadata["symbol"],
+        "assetType": metadata["assetType"],
+        "exchange": metadata["exchange"],
+        "currency": metadata["baseCurrency"],
+        "timezone": metadata["timezone"],
+        "returnBasis": metadata["returnBasis"],
+        "state": document["state"],
+        "status": document["state"],
+        "dataAsOf": document["dataAsOf"],
+        "observationCount": quality["observationCount"],
+        "source": {
+            "provider": source["provider"],
+            "adapter": source.get("adapter", "none"),
+        },
+    }
+    actual_projection = {field: entry[field] for field in expected_projection}
+    if actual_projection != expected_projection:
+        raise ValueError(
+            f"dynamic manifest/asset projection mismatch for {asset_id}: "
+            f"expected {expected_projection}, found {actual_projection}"
+        )
+
+
+def _validate_dynamic_catalog(
+    root: Path,
+    *,
+    catalog_schema: dict[str, Any],
+    asset_schema: dict[str, Any],
+) -> None:
+    manifest_path = root / DYNAMIC_CATALOG_FILE
+    dynamic_directory = root / "data/dynamic-assets"
+    if not manifest_path.exists():
+        if dynamic_directory.exists() and any(dynamic_directory.glob("*.json")):
+            raise ValueError("public dynamic assets require data/dynamic-catalog.json")
+        return
+    if manifest_path.is_symlink() or dynamic_directory.is_symlink():
+        raise ValueError("dynamic catalog paths cannot be symlinks")
+
+    manifest = load_json(manifest_path)
+    validate_document(manifest, catalog_schema, "dynamic catalog")
+    assets = manifest["assets"]
+    if manifest["assetCount"] != len(assets):
+        raise ValueError("dynamic manifest asset count mismatch")
+    if manifest["assetCount"] > manifest["requestedCount"]:
+        raise ValueError("dynamic manifest asset count exceeds requested count")
+    if manifest["preservedCount"] > manifest["assetCount"]:
+        raise ValueError("dynamic manifest preserved count mismatch")
+    if manifest["freshCount"] + manifest["preservedCount"] != manifest["assetCount"]:
+        raise ValueError("dynamic manifest fresh/preserved count mismatch")
+
+    for field in ("id", "symbol", "dataPath"):
+        values = [asset[field] for asset in assets]
+        if len(set(values)) != len(values):
+            raise ValueError(f"dynamic manifest {field} values must be unique")
+
+    data_root = (root / "data").resolve()
+    dynamic_root = dynamic_directory.resolve()
+    referenced: set[Path] = set()
+    for entry in assets:
+        unresolved = root / "data" / entry["dataPath"]
+        path = unresolved.resolve()
+        if (
+            path.parent != dynamic_root
+            or not path.is_relative_to(data_root)
+            or unresolved.is_symlink()
+            or not path.is_file()
+        ):
+            raise ValueError(f"dynamic catalog data path is unsafe or missing: {entry['dataPath']}")
+        document = load_json(path)
+        validate_document(document, asset_schema, str(path.relative_to(root)))
+        _validate_dynamic_asset(entry, document)
+        if path.stem != entry["id"]:
+            raise ValueError(f"dynamic asset id/path mismatch for {entry['id']}")
+        referenced.add(path)
+
+    # Owned dynamic-us files must be exactly the manifest reference set.  Files
+    # with unrelated names are outside this collector's deletion authority.
+    if dynamic_directory.exists():
+        for path in dynamic_directory.glob("*.json"):
+            resolved = path.resolve()
+            if resolved in referenced:
+                continue
+            if not re.fullmatch(r"dynamic-us-[a-z0-9-]+\.json", path.name):
+                continue
+            if path.is_symlink() or resolved.parent != dynamic_root:
+                raise ValueError(f"orphan dynamic asset path is unsafe: {path.relative_to(root)}")
+            raise ValueError(f"unreferenced dynamic asset must be pruned: {path.relative_to(root)}")
+
+
 def load_worker_fixtures(root: Path) -> list[dict[str, Any]]:
     script = """
 import { testSupport } from './worker/src/index.js';
@@ -614,6 +837,11 @@ def validate_local(root: Path) -> dict[str, str]:
         _validate_asset_against_catalog(asset, asset_document)
         asset_documents[asset["id"]] = asset_document
 
+    _validate_dynamic_catalog(
+        root,
+        catalog_schema=schemas["dynamic_catalog"],
+        asset_schema=schemas["asset"],
+    )
     _validate_generation_contracts(documents, catalog_assets, asset_documents)
 
     for index, fixture in enumerate(load_worker_fixtures(root)):
@@ -688,6 +916,11 @@ def validate_live(root: Path, base_url: str, local_hashes: dict[str, str]) -> No
         public_files = [*DATA_FILES.values(), RUNTIME_FILE] + [
             f"data/{asset['dataPath']}" for asset in catalog["assets"]
         ]
+        dynamic_manifest = root / DYNAMIC_CATALOG_FILE
+        if dynamic_manifest.is_file():
+            dynamic_catalog = load_json(dynamic_manifest)
+            public_files.append(DYNAMIC_CATALOG_FILE)
+            public_files.extend(f"data/{asset['dataPath']}" for asset in dynamic_catalog["assets"])
         expected_bytes = {relative: (root / relative).read_bytes() for relative in public_files}
 
     for relative in public_files:

@@ -33,6 +33,10 @@ PUBLIC_FRESHNESS_DAYS = 10
 FREE_PROVIDER_IDS = {"yahoo_finance", "fred"}
 
 
+def _yahoo_public_display_approved() -> bool:
+    return os.getenv("YAHOO_PUBLIC_DISPLAY_APPROVED") == "true"
+
+
 def load(path: Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8"))
 
@@ -376,19 +380,28 @@ def _free_provider_chain(
     fdr_provider: Any,
     stooq_provider: Any,
     fred_provider: Any,
+    yahoo_allowed: bool = True,
 ) -> list[tuple[str, Any]]:
     if entry["assetType"] == "fx":
-        return [
+        chain = [
             ("fred", fred_provider),
             ("yahoo_finance", yahoo_provider),
             ("stooq", stooq_provider),
         ]
-    if entry["returnBasis"] == "total_return_approximation":
-        return [
+    elif entry["returnBasis"] == "total_return_approximation":
+        chain = [
             ("yahoo_finance", yahoo_provider),
             ("finance_data_reader", fdr_provider),
         ]
-    return [("yahoo_finance", yahoo_provider), ("stooq", stooq_provider)]
+    else:
+        chain = [("yahoo_finance", yahoo_provider), ("stooq", stooq_provider)]
+    if yahoo_allowed:
+        return chain
+    return [
+        (name, provider)
+        for name, provider in chain
+        if name not in {"yahoo_finance", "finance_data_reader"}
+    ]
 
 
 def _fetch_free_series(
@@ -400,6 +413,7 @@ def _fetch_free_series(
     fdr_provider: Any,
     stooq_provider: Any,
     fred_provider: Any,
+    yahoo_allowed: bool = True,
 ) -> tuple[NormalizedPriceSeries, list[str]]:
     failures: list[str] = []
     adjust = "all" if entry["returnBasis"] == "total_return_approximation" else "none"
@@ -409,6 +423,7 @@ def _fetch_free_series(
         fdr_provider=fdr_provider,
         stooq_provider=stooq_provider,
         fred_provider=fred_provider,
+        yahoo_allowed=yahoo_allowed,
     ):
         try:
             series = provider.history(
@@ -492,6 +507,7 @@ def _cross_check(
     finviz_provider: Any,
     fred_provider: Any,
     disabled_providers: set[str],
+    yahoo_allowed: bool = True,
 ) -> dict[str, Any]:
     source_id, _, _ = _source_identity(series)
     if entry["assetType"] == "fx" and source_id == "fred":
@@ -506,6 +522,16 @@ def _cross_check(
         return {
             "provider": "none",
             "state": "not_applicable",
+            "commonObservations": 0,
+            "windowStart": None,
+            "windowEnd": None,
+            "medianAbsReturnDifference": None,
+            "p99AbsReturnDifference": None,
+        }
+    if provider_id == "yahoo_finance" and not yahoo_allowed:
+        return {
+            "provider": provider_id,
+            "state": "unavailable",
             "commonObservations": 0,
             "windowStart": None,
             "windowEnd": None,
@@ -596,6 +622,14 @@ def refresh(
     unknown_ids = selected_ids - public_ids
     if unknown_ids:
         raise ValueError(f"UNKNOWN_ASSET_ID:{sorted(unknown_ids)[0]}")
+    yahoo_display_approved = _yahoo_public_display_approved()
+    selected_yahoo_entries = [
+        entry
+        for entry in public_catalog["assets"]
+        if entry["id"] in selected_ids and _provider_id(entry) == "yahoo_finance"
+    ]
+    if selected_yahoo_entries and not yahoo_display_approved:
+        raise ProviderUnavailable("YAHOO_PUBLIC_DISPLAY_RIGHTS_UNCONFIRMED")
     generated_at = datetime.now(UTC).isoformat()
     end = end or date.today()
     default_start = start or end - timedelta(days=round(365.2425 * 5))
@@ -689,6 +723,7 @@ def refresh(
                 fdr_provider=fdr_provider,
                 stooq_provider=stooq_provider,
                 fred_provider=fred_provider,
+                yahoo_allowed=yahoo_display_approved,
             )
             series = merge_incremental(load(target), series, backfill=backfill)
             report = validate_price_series(series, as_of=end, freshness_days=10)
@@ -704,6 +739,7 @@ def refresh(
                 finviz_provider=finviz_provider,
                 fred_provider=fred_provider,
                 disabled_providers=crosscheck_disabled,
+                yahoo_allowed=yahoo_display_approved,
             )
             if cross_check["state"] == "mismatch":
                 raise ProviderResponseError("INDEPENDENT_SOURCE_MISMATCH")
@@ -917,12 +953,12 @@ def refresh(
                 {
                     "name": "yahoo_finance",
                     "configured": True,
-                    "rightsApproved": False,
+                    "rightsApproved": yahoo_display_approved,
                 },
                 {
                     "name": "finance_data_reader",
                     "configured": True,
-                    "rightsApproved": False,
+                    "rightsApproved": yahoo_display_approved,
                 },
                 {
                     "name": "stooq",

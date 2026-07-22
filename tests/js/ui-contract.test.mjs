@@ -38,6 +38,35 @@ test("static modules and styles share one release cache generation", () => {
   assert.equal(chartsVersion, appVersion);
 });
 
+test("historical assets use an accessible typed ticker combobox instead of a fixed select", () => {
+  assert.match(html, /id="asset-input"[^>]*role="combobox"[^>]*aria-autocomplete="list"[^>]*aria-controls="asset-options"/);
+  assert.match(html, /id="asset-options"[^>]*role="listbox"/);
+  assert.match(html, /id="asset-submit"[^>]*>분석<\/button>/);
+  assert.doesNotMatch(html, /id="asset-select"/);
+  assert.match(app, /function matchingCatalogAssets/);
+  assert.match(app, /\.\/data\/dynamic-catalog\.json/);
+  assert.match(app, /kelly-dynamic-asset-catalog/);
+  assert.match(app, /workerEndpoint\("\/v1\/search"/);
+  assert.match(app, /workerHealthSupportsCapability\(payload, "usHistory"\)/);
+  assert.match(app, /pathname === "\/v1\/fx" \? "fx" : "usHistory"/);
+  assert.match(app, /event\.key === "ArrowDown" \|\| event\.key === "ArrowUp"/);
+  assert.match(app, /event\.key === "Enter"/);
+  assert.match(app, /event\.key === "Escape"/);
+  assert.match(app, /role="option"/);
+  assert.match(app, /data-history-index=.*role="combobox"/s);
+  assert.match(css, /\.ticker-options\s*\{/);
+  assert.match(css, /\.ticker-option\.is-active/);
+});
+
+test("every ECharts numeric surface uses the shared two-decimal formatter", () => {
+  assert.match(charts, /maximumFractionDigits:\s*2/);
+  assert.match(charts, /valueFormatter:\s*formatChartNumber/);
+  assert.match(charts, /axisLabel:\s*\{[^}]*formatter:\s*formatChartNumber/s);
+  assert.match(charts, /formatChartPercent/);
+  assert.match(charts, /formatChartLeverage/);
+  assert.doesNotMatch(charts, /\.toFixed\(/);
+});
+
 test("mobile layout prevents page-level horizontal overflow while tables own their scroll", () => {
   assert.match(css, /body\s*\{[^}]*overflow-x:\s*hidden/s);
   assert.match(css, /\.table-scroll\s*\{[^}]*overflow-x:\s*auto/s);

@@ -16,6 +16,7 @@ import math
 import re
 import time
 from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
 from datetime import time as datetime_time
 from typing import Any
@@ -49,6 +50,27 @@ def _looks_like_html(response: object) -> bool:
     content_type = str(headers.get("content-type", "")).lower()
     prefix = _response_text(response).lstrip()[:512].lower()
     return "text/html" in content_type or prefix.startswith(("<!doctype html", "<html"))
+
+
+@dataclass(frozen=True)
+class YahooInstrumentMetadata:
+    """Identity fields returned by Yahoo's chart metadata response.
+
+    This object intentionally contains only upstream observations.  Callers
+    must validate the exchange, currency, and instrument type for their own
+    universe before treating the result as an asset identity.
+    """
+
+    requested_symbol: str
+    provider_symbol: str
+    instrument_type: str
+    currency: str
+    exchange_code: str
+    exchange_name: str
+    timezone: str
+    short_name: str | None
+    long_name: str | None
+    first_trade_date: str | None
 
 
 class YahooChartProvider:
@@ -135,6 +157,76 @@ class YahooChartProvider:
         if status != 200:
             raise ProviderResponseError("YAHOO_HTTP_ERROR")
         return response
+
+    def lookup(self, symbol: str) -> YahooInstrumentMetadata:
+        """Return provider-observed identity metadata for one symbol.
+
+        The history collector uses this before selecting an on-demand US
+        instrument.  It is deliberately not a search endpoint: callers must
+        supply one already-sanitized symbol and then validate the returned
+        identity against their allowed universe.
+        """
+
+        query_symbol = self.map_symbol(symbol)
+        response = self._request(
+            query_symbol,
+            {
+                "range": "5d",
+                "interval": "1d",
+                "events": "div,splits",
+                "includeAdjustedClose": "true",
+            },
+        )
+        try:
+            payload = response.json()  # type: ignore[attr-defined]
+        except (AttributeError, ValueError):
+            raise ProviderResponseError("YAHOO_PAYLOAD_INVALID") from None
+        if not isinstance(payload, dict) or not isinstance(payload.get("chart"), dict):
+            raise ProviderResponseError("YAHOO_PAYLOAD_INVALID")
+        chart = payload["chart"]
+        if chart.get("error"):
+            raise ProviderResponseError("YAHOO_PROVIDER_ERROR")
+        results = chart.get("result")
+        if not isinstance(results, list) or not results or not isinstance(results[0], dict):
+            raise ProviderResponseError("YAHOO_IDENTITY_METADATA_MISSING")
+        meta, exchange_timezone = self._validate_meta(
+            results[0].get("meta"),
+            query_symbol=query_symbol,
+            currency=None,
+            asset_type=None,
+        )
+
+        first_trade_date: str | None = None
+        raw_first_trade = meta.get("firstTradeDate")
+        if raw_first_trade is not None:
+            try:
+                first_trade_date = (
+                    datetime.fromtimestamp(float(raw_first_trade), UTC)
+                    .astimezone(exchange_timezone)
+                    .date()
+                    .isoformat()
+                )
+            except (OSError, OverflowError, TypeError, ValueError):
+                raise ProviderResponseError("YAHOO_IDENTITY_FIRST_TRADE_DATE_INVALID") from None
+
+        def optional_text(value: object) -> str | None:
+            text = str(value).strip() if value is not None else ""
+            return text or None
+
+        return YahooInstrumentMetadata(
+            requested_symbol=symbol,
+            provider_symbol=str(meta.get("symbol") or "").upper(),
+            instrument_type=str(meta.get("instrumentType") or "").upper(),
+            currency=str(meta.get("currency") or "").upper(),
+            exchange_code=str(meta.get("exchangeName") or "").upper(),
+            exchange_name=str(
+                meta.get("fullExchangeName") or meta.get("exchangeName") or ""
+            ).strip(),
+            timezone=str(meta.get("exchangeTimezoneName") or ""),
+            short_name=optional_text(meta.get("shortName")),
+            long_name=optional_text(meta.get("longName")),
+            first_trade_date=first_trade_date,
+        )
 
     @classmethod
     def _validate_meta(

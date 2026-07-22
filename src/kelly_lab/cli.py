@@ -8,6 +8,19 @@ from math import isfinite
 from pathlib import Path
 from typing import Any
 
+from .dynamic_assets import (
+    DynamicAssetError,
+    collect_us_asset,
+    require_yahoo_public_display_approval,
+)
+from .dynamic_universe import (
+    DEFAULT_BATCH_COUNT,
+    collect_us_batch,
+    preflight_public_manifest,
+    select_universe,
+    upsert_public_asset_manifest,
+    validate_batch_count,
+)
 from .errors import KellyLabError, ReasonCode
 from .fx import align_fx_prior, convert_prices_to_base, simple_returns_from_prices
 from .kelly import exact_historical_kelly, single_asset_gbm_kelly
@@ -160,6 +173,115 @@ def assumptions(args: argparse.Namespace) -> int:
         }
     )
     return 0 if result.status in {"published", "degraded"} else 2
+
+
+def fetch_us(args: argparse.Namespace) -> int:
+    """Collect one validated dynamic US equity or ETF cache file."""
+
+    root = Path(__file__).resolve().parents[2]
+    if args.cache_scope == "public":
+        require_yahoo_public_display_approval("public")
+        preflight_public_manifest(root, args.symbol)
+    path, document = collect_us_asset(
+        root,
+        args.symbol,
+        start=args.start,
+        end=args.end,
+        basis_mode=args.basis,
+        cache_scope=args.cache_scope,
+        backfill=args.backfill,
+    )
+    manifest_path: Path | None = None
+    if args.cache_scope == "public":
+        manifest_path, _manifest = upsert_public_asset_manifest(root, path, document)
+    try:
+        display_path = str(path.relative_to(root))
+    except ValueError:
+        display_path = str(path)
+    quality = document["quality"]
+    _json(
+        {
+            "contract": "kelly-dynamic-fetch-result",
+            "mode": "dynamic_us_history",
+            "status": document["state"],
+            "assetId": document["assetId"],
+            "symbol": document["metadata"]["symbol"],
+            "assetType": document["metadata"]["assetType"],
+            "returnBasis": document["metadata"]["returnBasis"],
+            "period": {
+                "start": document["dates"][0],
+                "end": document["dates"][-1],
+            },
+            "observationCount": quality["observationCount"],
+            "eligibleForKelly": quality["eligibleForKelly"],
+            "source": {
+                "provider": document["source"]["provider"],
+                "adapter": document["source"].get("adapter"),
+            },
+            "crossCheck": quality["crossCheck"],
+            "cacheScope": args.cache_scope,
+            "backfill": args.backfill,
+            "path": display_path,
+            "manifestPath": (
+                str(manifest_path.relative_to(root)) if manifest_path is not None else None
+            ),
+        }
+    )
+    return 0
+
+
+def fetch_us_batch(args: argparse.Namespace) -> int:
+    """Discover and cache an isolated batch of dynamic US assets."""
+
+    root = Path(__file__).resolve().parents[2]
+    validate_batch_count(args.count)
+    require_yahoo_public_display_approval(args.cache_scope)
+    selection = select_universe(
+        args.universe,
+        args.count,
+        symbols_file=args.symbols_file,
+    )
+    path, manifest = collect_us_batch(
+        root,
+        selection,
+        start=args.start,
+        end=args.end,
+        basis_mode=args.basis,
+        cache_scope=args.cache_scope,
+        backfill=args.backfill,
+    )
+    try:
+        display_path = str(path.relative_to(root))
+    except ValueError:
+        display_path = str(path)
+    status = (
+        "published"
+        if manifest["assetCount"] == manifest["requestedCount"]
+        and manifest["preservedCount"] == 0
+        and manifest["universeFallbackReason"] is None
+        else "degraded"
+    )
+    _json(
+        {
+            "contract": "kelly-dynamic-batch-result",
+            "mode": "dynamic_us_batch",
+            "status": status,
+            "universeSource": manifest["universeSource"],
+            "universeFallbackReason": manifest["universeFallbackReason"],
+            "requestedCount": manifest["requestedCount"],
+            "attemptedCount": manifest["attemptedCount"],
+            "excludedCoreCount": manifest["excludedCoreCount"],
+            "freshCount": manifest["freshCount"],
+            "preservedCount": manifest["preservedCount"],
+            "prunedCount": manifest["prunedCount"],
+            "assetCount": manifest["assetCount"],
+            "failureCount": len(manifest["failures"]),
+            "cacheScope": args.cache_scope,
+            "backfill": args.backfill,
+            "path": display_path,
+        }
+    )
+    return 0
 
 
 def _slice_prices(
@@ -537,6 +659,69 @@ def build_parser() -> argparse.ArgumentParser:
     direct.add_argument("--cap", type=float, default=3.0)
     direct.set_defaults(handler=assumptions)
 
+    dynamic = subparsers.add_parser(
+        "fetch-us",
+        help="discover and cache a bounded US equity or ETF history outside the core catalog",
+    )
+    dynamic.add_argument("symbol", help="US ticker, for example COST or BRK-B")
+    dynamic.add_argument("--start", type=date.fromisoformat)
+    dynamic.add_argument("--end", type=date.fromisoformat)
+    dynamic.add_argument(
+        "--basis",
+        choices=("adjusted", "price"),
+        default="adjusted",
+        help="adjusted uses Yahoo adjusted close; price permits a Stooq fallback",
+    )
+    dynamic.add_argument(
+        "--cache-scope",
+        choices=("local", "public"),
+        default="local",
+        help="local writes under var/; public writes under data/dynamic-assets/",
+    )
+    dynamic.add_argument(
+        "--backfill",
+        action="store_true",
+        help="replace the complete cached history after reviewing a drift or window change",
+    )
+    dynamic.set_defaults(handler=fetch_us)
+
+    dynamic_batch = subparsers.add_parser(
+        "fetch-us-batch",
+        help="discover and cache a separate bounded US equity/ETF universe",
+    )
+    dynamic_batch.add_argument(
+        "--universe",
+        choices=("auto", "nasdaq", "fdr", "file"),
+        default="auto",
+        help="auto uses Nasdaq's screener with an FDR listing fallback",
+    )
+    dynamic_batch.add_argument(
+        "--symbols-file",
+        type=Path,
+        help="UTF-8 ticker list used only with --universe file",
+    )
+    dynamic_batch.add_argument("--count", type=int, default=DEFAULT_BATCH_COUNT)
+    dynamic_batch.add_argument("--start", type=date.fromisoformat)
+    dynamic_batch.add_argument("--end", type=date.fromisoformat)
+    dynamic_batch.add_argument(
+        "--basis",
+        choices=("adjusted", "price"),
+        default="adjusted",
+        help="adjusted preserves Yahoo total-return approximation semantics",
+    )
+    dynamic_batch.add_argument(
+        "--cache-scope",
+        choices=("local", "public"),
+        default="public",
+        help="public writes Pages-visible dynamic assets and their manifest",
+    )
+    dynamic_batch.add_argument(
+        "--backfill",
+        action="store_true",
+        help="replace complete histories instead of preserving frozen returns incrementally",
+    )
+    dynamic_batch.set_defaults(handler=fetch_us_batch)
+
     history = subparsers.add_parser("analyze", help="analyze a normalized static asset file")
     history.add_argument("asset")
     history.add_argument("--start")
@@ -589,6 +774,8 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def _error_reason(error: Exception) -> str:
+    if isinstance(error, DynamicAssetError):
+        return error.reason
     if isinstance(error, KellyLabError):
         return error.code.value
     if isinstance(error, CLIError):
@@ -610,6 +797,8 @@ def main(argv: list[str] | None = None) -> int:
     except (KellyLabError, ValueError, TypeError, KeyError, OSError, json.JSONDecodeError) as error:
         mode = {
             "assumptions": "direct_assumptions",
+            "fetch-us": "dynamic_us_history",
+            "fetch-us-batch": "dynamic_us_batch",
             "analyze": "historical",
             "portfolio": "multi_asset_assumptions",
             "portfolio-history": "portfolio_history",
