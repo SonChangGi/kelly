@@ -3,7 +3,7 @@
   "contract": "kelly-asset-history",
   "state": "published",
   "assetId": "stock-nvda",
-  "generatedAt": "2026-07-21T23:40:17.878412+00:00",
+  "generatedAt": "2026-07-22T00:07:17.366444+00:00",
   "dataAsOf": "2026-07-21",
   "metadata": {
     "symbol": "NVDA",
@@ -3789,12 +3789,9 @@
     "sourceUrl": "https://finance.yahoo.com/",
     "license": "Yahoo Finance research data; no vendor license asserted",
     "attribution": "Data source: Yahoo Finance chart API",
-    "cachedAt": "2026-07-21T23:40:17.878412+00:00",
+    "cachedAt": "2026-07-22T00:07:17.366444+00:00",
     "contentDigest": "abd166c60826a3b3e76c270f6cbd5f559a8b2617c3304735e0fae99de3646865"
   },
-  "limitations": [
-    "Adjusted daily close is a total-return approximation; taxes, slippage, and financing are excluded."
-  ],
   "quality": {
     "observationCount": 1254,
     "eligibleForKelly": true,
@@ -3802,11 +3799,14 @@
     "crossCheck": {
       "provider": "finviz",
       "state": "passed",
-      "commonObservations": 437,
-      "medianAbsReturnDifference": 4.4240443752840974e-08,
-      "p99AbsReturnDifference": 5.624774412416045e-05
+      "commonObservations": 23,
+      "medianAbsReturnDifference": 2.6904190875143286e-08,
+      "p99AbsReturnDifference": 4.684872112470373e-08
     }
   },
+  "limitations": [
+    "Adjusted daily close is a total-return approximation; taxes, slippage, and financing are excluded."
+  ],
   "fx": {
     "pair": "USD/KRW",
     "dates": [

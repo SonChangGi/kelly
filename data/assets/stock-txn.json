@@ -3,7 +3,7 @@
   "contract": "kelly-asset-history",
   "state": "published",
   "assetId": "stock-txn",
-  "generatedAt": "2026-07-21T23:40:17.878412+00:00",
+  "generatedAt": "2026-07-22T00:07:17.366444+00:00",
   "dataAsOf": "2026-07-21",
   "metadata": {
     "symbol": "TXN",
@@ -3789,12 +3789,9 @@
     "sourceUrl": "https://finance.yahoo.com/",
     "license": "Yahoo Finance research data; no vendor license asserted",
     "attribution": "Data source: Yahoo Finance chart API",
-    "cachedAt": "2026-07-21T23:40:17.878412+00:00",
+    "cachedAt": "2026-07-22T00:07:17.366444+00:00",
     "contentDigest": "fc508fc004d0615666bd5245ac025d9e12f3ceb859f7ce486b6e2d9262b79fdf"
   },
-  "limitations": [
-    "Adjusted daily close is a total-return approximation; taxes, slippage, and financing are excluded."
-  ],
   "quality": {
     "observationCount": 1254,
     "eligibleForKelly": true,
@@ -3802,11 +3799,14 @@
     "crossCheck": {
       "provider": "finviz",
       "state": "passed",
-      "commonObservations": 437,
-      "medianAbsReturnDifference": 4.726380176123257e-08,
-      "p99AbsReturnDifference": 0.0064252457285052245
+      "commonObservations": 23,
+      "medianAbsReturnDifference": 4.3572935481961395e-08,
+      "p99AbsReturnDifference": 1.6019084178253706e-05
     }
   },
+  "limitations": [
+    "Adjusted daily close is a total-return approximation; taxes, slippage, and financing are excluded."
+  ],
   "fx": {
     "pair": "USD/KRW",
     "dates": [

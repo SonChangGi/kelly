@@ -3,10 +3,10 @@
   "contract": "kelly-automation-status",
   "projectId": "kelly",
   "state": "degraded",
-  "generatedAt": "2026-07-22T00:00:33.145754+00:00",
+  "generatedAt": "2026-07-22T00:07:17.366444+00:00",
   "dataAsOf": "2026-07-22",
-  "lastAttemptAt": "2026-07-22T00:00:33.145754+00:00",
-  "lastSuccessAt": "2026-07-21T23:45:29.343691+00:00",
+  "lastAttemptAt": "2026-07-22T00:07:17.366444+00:00",
+  "lastSuccessAt": "2026-07-22T00:07:17.366444+00:00",
   "schedule": "weekdays after source-market close",
   "provider": {
     "name": "mixed",
@@ -48,10 +48,11 @@
   },
   "publication": {
     "target": "github_pages",
-    "latestPublishedAt": "2026-07-21T23:45:29.343691+00:00",
+    "latestPublishedAt": "2026-07-22T00:07:17.366444+00:00",
     "assetCount": 48
   },
   "reasonCodes": [
+    "historical_observation_removed_backfill_required",
     "krx_api_key_unavailable",
     "krx_public_display_rights_unconfirmed"
   ]

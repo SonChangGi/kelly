@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "contract": "kelly-asset-history",
-  "state": "published",
+  "state": "degraded",
   "assetId": "fx-usd-krw",
-  "generatedAt": "2026-07-21T23:45:29.343691+00:00",
+  "generatedAt": "2026-07-22T00:07:17.366444+00:00",
   "dataAsOf": "2026-07-22",
   "metadata": {
     "symbol": "USD/KRW",
@@ -3934,7 +3934,8 @@
   "limitations": [
     "Daily price-return series; dividends, taxes, slippage, and financing are excluded.",
     "primary_adapter_failed_before_same-basis_fallback",
-    "independent_crosscheck_unavailable"
+    "independent_crosscheck_unavailable",
+    "historical_observation_removed_backfill_required"
   ],
   "quality": {
     "observationCount": 1300,

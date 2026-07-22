@@ -3,7 +3,7 @@
   "contract": "kelly-asset-history",
   "state": "published",
   "assetId": "stock-nflx",
-  "generatedAt": "2026-07-21T23:40:17.878412+00:00",
+  "generatedAt": "2026-07-22T00:07:17.366444+00:00",
   "dataAsOf": "2026-07-21",
   "metadata": {
     "symbol": "NFLX",
@@ -3789,12 +3789,9 @@
     "sourceUrl": "https://finance.yahoo.com/",
     "license": "Yahoo Finance research data; no vendor license asserted",
     "attribution": "Data source: Yahoo Finance chart API",
-    "cachedAt": "2026-07-21T23:40:17.878412+00:00",
+    "cachedAt": "2026-07-22T00:07:17.366444+00:00",
     "contentDigest": "481a4af16130322348607626b6d9fcbae9f0958d544b08e30851c345147ce44d"
   },
-  "limitations": [
-    "Adjusted daily close is a total-return approximation; taxes, slippage, and financing are excluded."
-  ],
   "quality": {
     "observationCount": 1254,
     "eligibleForKelly": true,
@@ -3802,11 +3799,14 @@
     "crossCheck": {
       "provider": "finviz",
       "state": "passed",
-      "commonObservations": 437,
-      "medianAbsReturnDifference": 2.400090082232964e-08,
-      "p99AbsReturnDifference": 7.678703628499761e-08
+      "commonObservations": 23,
+      "medianAbsReturnDifference": 2.4889111660542085e-08,
+      "p99AbsReturnDifference": 6.451910439242425e-08
     }
   },
+  "limitations": [
+    "Adjusted daily close is a total-return approximation; taxes, slippage, and financing are excluded."
+  ],
   "fx": {
     "pair": "USD/KRW",
     "dates": [

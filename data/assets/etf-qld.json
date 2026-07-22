@@ -3,7 +3,7 @@
   "contract": "kelly-asset-history",
   "state": "published",
   "assetId": "etf-qld",
-  "generatedAt": "2026-07-21T23:40:17.878412+00:00",
+  "generatedAt": "2026-07-22T00:07:17.366444+00:00",
   "dataAsOf": "2026-07-21",
   "metadata": {
     "symbol": "QLD",
@@ -3789,12 +3789,9 @@
     "sourceUrl": "https://finance.yahoo.com/",
     "license": "Yahoo Finance research data; no vendor license asserted",
     "attribution": "Data source: Yahoo Finance chart API",
-    "cachedAt": "2026-07-21T23:40:17.878412+00:00",
+    "cachedAt": "2026-07-22T00:07:17.366444+00:00",
     "contentDigest": "745a6cb07e00222428cae83c871133587195fb33118858db3428f929fbfa4302"
   },
-  "limitations": [
-    "Adjusted daily close is a total-return approximation; taxes, slippage, and financing are excluded."
-  ],
   "quality": {
     "observationCount": 1254,
     "eligibleForKelly": true,
@@ -3802,11 +3799,14 @@
     "crossCheck": {
       "provider": "finviz",
       "state": "passed",
-      "commonObservations": 437,
-      "medianAbsReturnDifference": 5.1791007926738075e-08,
-      "p99AbsReturnDifference": 0.00025380925541718113
+      "commonObservations": 23,
+      "medianAbsReturnDifference": 2.6172821021575032e-08,
+      "p99AbsReturnDifference": 6.801001561917985e-08
     }
   },
+  "limitations": [
+    "Adjusted daily close is a total-return approximation; taxes, slippage, and financing are excluded."
+  ],
   "fx": {
     "pair": "USD/KRW",
     "dates": [

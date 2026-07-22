@@ -3,7 +3,7 @@
   "contract": "kelly-asset-history",
   "state": "published",
   "assetId": "stock-tsla",
-  "generatedAt": "2026-07-21T23:40:17.878412+00:00",
+  "generatedAt": "2026-07-22T00:07:17.366444+00:00",
   "dataAsOf": "2026-07-21",
   "metadata": {
     "symbol": "TSLA",
@@ -3789,12 +3789,9 @@
     "sourceUrl": "https://finance.yahoo.com/",
     "license": "Yahoo Finance research data; no vendor license asserted",
     "attribution": "Data source: Yahoo Finance chart API",
-    "cachedAt": "2026-07-21T23:40:17.878412+00:00",
+    "cachedAt": "2026-07-22T00:07:17.366444+00:00",
     "contentDigest": "c9cf88c9de6c619d592ccd2944e2d864fd426db53937e0c472b609ce4a3d3a8d"
   },
-  "limitations": [
-    "Adjusted daily close is a total-return approximation; taxes, slippage, and financing are excluded."
-  ],
   "quality": {
     "observationCount": 1254,
     "eligibleForKelly": true,
@@ -3802,11 +3799,14 @@
     "crossCheck": {
       "provider": "finviz",
       "state": "passed",
-      "commonObservations": 437,
-      "medianAbsReturnDifference": 2.3517648495285925e-08,
-      "p99AbsReturnDifference": 7.911249366721052e-08
+      "commonObservations": 23,
+      "medianAbsReturnDifference": 1.528637583181336e-08,
+      "p99AbsReturnDifference": 5.525487700719367e-08
     }
   },
+  "limitations": [
+    "Adjusted daily close is a total-return approximation; taxes, slippage, and financing are excluded."
+  ],
   "fx": {
     "pair": "USD/KRW",
     "dates": [
