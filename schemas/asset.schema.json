@@ -96,6 +96,8 @@
             "provider",
             "state",
             "commonObservations",
+            "windowStart",
+            "windowEnd",
             "medianAbsReturnDifference",
             "p99AbsReturnDifference"
           ],

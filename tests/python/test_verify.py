@@ -214,7 +214,7 @@ def test_rejects_source_provider_mismatch_for_published_and_unavailable() -> Non
             "passed cross-check has insufficient comparisons",
         ),
         (
-            lambda quality: quality["crossCheck"].update(windowStart="2026-01-01"),
+            lambda quality: quality["crossCheck"].pop("windowEnd"),
             "cross-check window incomplete",
         ),
         (
