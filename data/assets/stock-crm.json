@@ -3,7 +3,7 @@
   "contract": "kelly-asset-history",
   "state": "published",
   "assetId": "stock-crm",
-  "generatedAt": "2026-07-22T00:38:16.921758+00:00",
+  "generatedAt": "2026-07-22T00:56:54.482095+00:00",
   "dataAsOf": "2026-07-21",
   "metadata": {
     "symbol": "CRM",
@@ -3789,7 +3789,7 @@
     "sourceUrl": "https://finance.yahoo.com/",
     "license": "Yahoo Finance research data; no vendor license asserted",
     "attribution": "Data source: Yahoo Finance chart API",
-    "cachedAt": "2026-07-22T00:38:16.921758+00:00",
+    "cachedAt": "2026-07-22T00:56:54.482095+00:00",
     "contentDigest": "1e55b35efef41640269f39fc7e92d2d82f5f5a1e7cce67a849ea0e3ea7752353"
   },
   "quality": {

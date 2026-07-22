@@ -3,7 +3,7 @@
   "contract": "kelly-asset-history",
   "state": "published",
   "assetId": "stock-amat",
-  "generatedAt": "2026-07-22T00:38:16.921758+00:00",
+  "generatedAt": "2026-07-22T00:56:54.482095+00:00",
   "dataAsOf": "2026-07-21",
   "metadata": {
     "symbol": "AMAT",
@@ -3789,7 +3789,7 @@
     "sourceUrl": "https://finance.yahoo.com/",
     "license": "Yahoo Finance research data; no vendor license asserted",
     "attribution": "Data source: Yahoo Finance chart API",
-    "cachedAt": "2026-07-22T00:38:16.921758+00:00",
+    "cachedAt": "2026-07-22T00:56:54.482095+00:00",
     "contentDigest": "9ffd6737e83838a225a6234bd2514e6c7471a7f6a401ba9162938531b14716d0"
   },
   "quality": {

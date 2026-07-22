@@ -3,7 +3,7 @@
   "contract": "kelly-asset-history",
   "state": "published",
   "assetId": "etf-ssg",
-  "generatedAt": "2026-07-22T00:40:41.751018+00:00",
+  "generatedAt": "2026-07-22T00:56:54.482095+00:00",
   "dataAsOf": "2026-07-21",
   "metadata": {
     "symbol": "SSG",
@@ -3789,7 +3789,7 @@
     "sourceUrl": "https://finance.yahoo.com/",
     "license": "Yahoo Finance research data; no vendor license asserted",
     "attribution": "Data source: Yahoo Finance chart API",
-    "cachedAt": "2026-07-22T00:40:41.751018+00:00",
+    "cachedAt": "2026-07-22T00:56:54.482095+00:00",
     "contentDigest": "b0299ca4c312f725f688570e3de65d7a90f68a808594f28e950791d16ace3e1c"
   },
   "quality": {

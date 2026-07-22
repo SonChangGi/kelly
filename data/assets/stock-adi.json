@@ -3,7 +3,7 @@
   "contract": "kelly-asset-history",
   "state": "published",
   "assetId": "stock-adi",
-  "generatedAt": "2026-07-22T00:38:16.921758+00:00",
+  "generatedAt": "2026-07-22T00:56:54.482095+00:00",
   "dataAsOf": "2026-07-21",
   "metadata": {
     "symbol": "ADI",
@@ -3789,7 +3789,7 @@
     "sourceUrl": "https://finance.yahoo.com/",
     "license": "Yahoo Finance research data; no vendor license asserted",
     "attribution": "Data source: Yahoo Finance chart API",
-    "cachedAt": "2026-07-22T00:38:16.921758+00:00",
+    "cachedAt": "2026-07-22T00:56:54.482095+00:00",
     "contentDigest": "93857b3ce2037760d1308336301f0a9e8347740ad83d1e98f0fc8127df4f9b42"
   },
   "quality": {
