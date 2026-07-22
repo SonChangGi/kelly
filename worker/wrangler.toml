@@ -4,4 +4,7 @@ compatibility_date = "2026-07-21"
 
 [vars]
 ALLOWED_ORIGINS = "https://sonchanggi.github.io"
+YAHOO_PUBLIC_DISPLAY_APPROVED = "false"
 TWELVE_DATA_RIGHTS_APPROVED = "false"
+SEARCH_RATE_LIMIT_PER_MINUTE = "30"
+HISTORY_RATE_LIMIT_PER_MINUTE = "60"

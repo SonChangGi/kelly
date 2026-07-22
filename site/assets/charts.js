@@ -2,6 +2,29 @@ import * as echarts from "./vendor/echarts.esm.min.js";
 
 const instances = new Map();
 let observer;
+const chartNumberFormatter = new Intl.NumberFormat("ko-KR", {
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 2,
+});
+
+export function formatChartNumber(value) {
+  if (value === null || value === undefined || value === "") return "—";
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return "—";
+  return chartNumberFormatter.format(Object.is(numeric, -0) ? 0 : numeric);
+}
+
+export function formatChartPercent(value) {
+  const numeric = Number(value);
+  return value === null || value === undefined || value === "" || !Number.isFinite(numeric)
+    ? "—"
+    : `${formatChartNumber(numeric * 100)}%`;
+}
+
+export function formatChartLeverage(value) {
+  const formatted = formatChartNumber(value);
+  return formatted === "—" ? formatted : `${formatted}×`;
+}
 
 function palette() {
   const dark = document.documentElement.dataset.theme === "dark";
@@ -56,6 +79,7 @@ function baseOption(title, subtitle = "") {
       textStyle: { color: colors.ink, fontFamily: "Pretendard, Inter, sans-serif", fontSize: 12 },
       extraCssText: "box-shadow: 0 12px 32px rgba(16,32,42,.16); border-radius: 10px;",
       confine: true,
+      valueFormatter: formatChartNumber,
     },
     textStyle: { color: colors.ink, fontFamily: "Pretendard, Inter, sans-serif" },
     grid: { left: 54, right: 18, top: 66, bottom: 42, containLabel: false },
@@ -71,7 +95,7 @@ function baseOption(title, subtitle = "") {
       scale: true,
       axisLine: { show: true, lineStyle: { color: colors.muted } },
       axisTick: { show: false },
-      axisLabel: { color: colors.muted, fontSize: 10 },
+      axisLabel: { color: colors.muted, fontSize: 10, formatter: formatChartNumber },
       splitLine: { lineStyle: { color: colors.grid } },
     },
   };
@@ -108,7 +132,7 @@ export function renderWealthChart(element, { dates, officialWealth, explorationW
     data: ["공식 분석기간", "탐색 미리보기"],
   };
   option.xAxis.data = dates;
-  option.yAxis.axisLabel.formatter = (value) => Number(value).toFixed(0);
+  option.yAxis.axisLabel.formatter = formatChartNumber;
   option.dataZoom = [
     {
       type: "slider",
@@ -172,8 +196,8 @@ export function renderDrawdownChart(element, dates, drawdowns) {
   const option = baseOption("낙폭", "직전 고점 대비 · 0% 아래 영역");
   option.xAxis.data = dates;
   option.yAxis.max = 0;
-  option.yAxis.axisLabel.formatter = (value) => `${(value * 100).toFixed(0)}%`;
-  option.tooltip.valueFormatter = (value) => `${(value * 100).toFixed(2)}%`;
+  option.yAxis.axisLabel.formatter = formatChartPercent;
+  option.tooltip.valueFormatter = formatChartPercent;
   option.series = [{
     type: "line", data: drawdowns, showSymbol: false, lineStyle: { width: 1.6, color: colors.orange },
     areaStyle: { color: "rgba(189,100,41,.16)" }, itemStyle: { color: colors.orange },
@@ -189,12 +213,12 @@ export function renderGrowthCurve(element, points, markers = []) {
   option.xAxis = {
     type: "value", name: "레버리지", min: 0, max: 3,
     axisLine: { lineStyle: { color: colors.muted } }, axisTick: { show: false },
-    axisLabel: { color: colors.muted, formatter: (value) => `${value.toFixed(1)}×` }, splitLine: { show: false },
+    axisLabel: { color: colors.muted, formatter: formatChartLeverage }, splitLine: { show: false },
   };
-  option.yAxis.axisLabel.formatter = (value) => `${(value * 100).toFixed(1)}%`;
+  option.yAxis.axisLabel.formatter = formatChartPercent;
   option.tooltip.formatter = (params) => {
     const point = Array.isArray(params) ? params[0] : params;
-    return `${point.data[0].toFixed(2)}×<br><strong>${(point.data[1] * 100).toFixed(2)}%</strong>`;
+    return `${formatChartLeverage(point.data[0])}<br><strong>${formatChartPercent(point.data[1])}</strong>`;
   };
   option.series = [
     { type: "line", data: points, showSymbol: false, lineStyle: { width: 2.2, color: colors.blue }, itemStyle: { color: colors.blue } },
@@ -216,13 +240,14 @@ export function renderWeightsChart(element, labels, theoretical, applied) {
   option.legend = { top: 34, right: 8, data: ["이론", "적용"], textStyle: { color: colors.muted, fontSize: 10 } };
   option.xAxis = {
     type: "value", axisLine: { lineStyle: { color: colors.muted } }, axisTick: { show: false },
-    axisLabel: { color: colors.muted, formatter: (value) => `${value.toFixed(1)}×` }, splitLine: { lineStyle: { color: colors.grid } },
+    axisLabel: { color: colors.muted, formatter: formatChartLeverage }, splitLine: { lineStyle: { color: colors.grid } },
   };
   option.yAxis = { type: "category", data: labels, axisLine: { show: false }, axisTick: { show: false }, axisLabel: { color: colors.ink } };
   option.series = [
     { name: "이론", type: "bar", data: theoretical, itemStyle: { color: colors.blueLight, borderColor: colors.blue, borderWidth: 1 } },
-    { name: "적용", type: "bar", data: applied, itemStyle: { color: colors.gold }, label: { show: true, position: "right", formatter: ({ value }) => `${value.toFixed(2)}×`, color: colors.ink } },
+    { name: "적용", type: "bar", data: applied, itemStyle: { color: colors.gold }, label: { show: true, position: "right", formatter: ({ value }) => formatChartLeverage(value), color: colors.ink } },
   ];
+  option.tooltip.valueFormatter = formatChartLeverage;
   chart.setOption(option, true);
 }
 
@@ -237,10 +262,10 @@ export function renderCorrelationHeatmap(element, labels, correlation) {
   option.yAxis = { type: "category", data: labels, splitArea: { show: true }, axisLine: { show: false }, axisTick: { show: false }, axisLabel: { color: colors.ink } };
   option.visualMap = {
     min: -1, max: 1, calculable: false, orient: "horizontal", left: "center", bottom: 5,
-    inRange: { color: [colors.orange, colors.panel, colors.blue] }, textStyle: { color: colors.muted, fontSize: 9 },
+    inRange: { color: [colors.orange, colors.panel, colors.blue] }, textStyle: { color: colors.muted, fontSize: 9 }, formatter: formatChartNumber,
   };
-  option.tooltip.formatter = ({ data: point }) => `${labels[point[1]]} × ${labels[point[0]]}<br><strong>${point[2].toFixed(2)}</strong>`;
-  option.series = [{ type: "heatmap", data, label: { show: true, formatter: ({ data: point }) => point[2].toFixed(2), color: colors.ink }, emphasis: { itemStyle: { shadowBlur: 8, shadowColor: "rgba(0,0,0,.2)" } } }];
+  option.tooltip.formatter = ({ data: point }) => `${labels[point[1]]} × ${labels[point[0]]}<br><strong>${formatChartNumber(point[2])}</strong>`;
+  option.series = [{ type: "heatmap", data, label: { show: true, formatter: ({ data: point }) => formatChartNumber(point[2]), color: colors.ink }, emphasis: { itemStyle: { shadowBlur: 8, shadowColor: "rgba(0,0,0,.2)" } } }];
   chart.setOption(option, true);
 }
 
@@ -253,7 +278,7 @@ export function renderRebalanceChart(element, dates, comparison) {
   const option = baseOption("재조정 효과 비교", "초기 1은 첫 수익률 전 · 동일 목표비중 · 비용 전/후와 미재조정 경로");
   option.legend = { top: 32, right: 8, data: ["미재조정", "비용 전", "비용 후"], textStyle: { color: colors.muted, fontSize: 10 } };
   option.xAxis.data = xDates;
-  option.yAxis.axisLabel.formatter = (value) => value.toFixed(2);
+  option.yAxis.axisLabel.formatter = formatChartNumber;
   option.series = [
     { name: "미재조정", type: "line", data: comparison.buyAndHold.wealth, showSymbol: false, lineStyle: { color: colors.muted, type: "dashed", width: 1.4 } },
     { name: "비용 전", type: "line", data: comparison.gross.wealth, showSymbol: false, lineStyle: { color: colors.gold, width: 1.7 } },

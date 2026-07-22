@@ -53,6 +53,10 @@
           "returnBasis": {
             "type": "string",
             "enum": ["price_return", "total_return_approximation", "fx_rate"]
+          },
+          "priceField": {
+            "type": "string",
+            "enum": ["close", "adjusted_close"]
           }
         }
       }
@@ -113,11 +117,25 @@
         "attribution"
       ],
       "properties": {
-        "provider": { "type": "string", "enum": ["twelve_data", "none"] },
+        "provider": {
+          "type": "string",
+          "enum": ["twelve_data", "yahoo_finance", "none"]
+        },
         "normalized": { "const": true },
         "rawRedistribution": { "const": false },
         "frequency": { "const": "daily" },
-        "priceField": { "const": "close" },
+        "priceField": {
+          "type": "string",
+          "enum": ["close", "adjusted_close", "by_asset"]
+        },
+        "priceFieldBySymbol": {
+          "type": "object",
+          "propertyNames": { "type": "string", "minLength": 1, "maxLength": 24 },
+          "additionalProperties": {
+            "type": "string",
+            "enum": ["close", "adjusted_close"]
+          }
+        },
         "license": { "type": "string", "minLength": 1 },
         "cachedAt": { "type": "string", "format": "date-time" },
         "attribution": { "type": "string", "minLength": 1 }

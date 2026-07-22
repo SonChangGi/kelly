@@ -22,7 +22,7 @@ import {
   sliceSeries,
   validateCorrelationMatrix,
   wealthPath,
-} from "./engine.js?v=20260722.4";
+} from "./engine.js?v=20260722.5";
 import {
   clearChart,
   disposeCharts,
@@ -33,7 +33,7 @@ import {
   renderRebalanceChart,
   renderWealthChart,
   renderWeightsChart,
-} from "./charts.js?v=20260722.4";
+} from "./charts.js?v=20260722.5";
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
@@ -48,6 +48,17 @@ const PORTFOLIO_MIN_ASSETS = 2;
 const PORTFOLIO_MAX_ASSETS = 5;
 const MIN_EFFECTIVE_RATE_PERCENT = -99.999999;
 const MIN_KELLY_OBSERVATIONS = 60;
+const TICKER_QUERY_PATTERN = /^[A-Z][A-Z0-9]{0,9}(?:[.-][A-Z0-9]{1,5})?$/;
+const TICKER_SUGGESTION_LIMIT = 10;
+const ASSET_TYPE_LABELS = {
+  stock: "주식",
+  equity: "주식",
+  index: "지수",
+  etf: "ETF",
+  leveraged_etf: "레버리지 ETF",
+  fx: "환율",
+  currency: "환율",
+};
 
 function shareParams(value) {
   if (value instanceof URLSearchParams) return new URLSearchParams(value);
@@ -260,6 +271,7 @@ const state = {
   portfolioResults: { direct: null, historical: null },
   lastPortfolioResult: null,
 };
+let historicalTickerCombobox = null;
 
 const reasonLabels = {
   [REASON.INSUFFICIENT_OBSERVATIONS]: "관측치 부족",
@@ -460,8 +472,300 @@ function catalogItems(payload) {
     type: item.type ?? item.assetType ?? "asset",
     currency: item.currency ?? "USD",
     returnBasis: item.returnBasis ?? item.return_basis ?? "unspecified",
-    status: item.status ?? STATUS.UNAVAILABLE,
+    status: item.status ?? item.state ?? STATUS.UNAVAILABLE,
   }));
+}
+
+function normalizeTickerQuery(value) {
+  const normalized = String(value ?? "").trim().toUpperCase();
+  return /^[A-Z][A-Z0-9]{0,9}\.[A-Z0-9]{1,5}$/.test(normalized)
+    ? normalized.replace(".", "-")
+    : normalized;
+}
+
+function exactCatalogAsset(assets, query) {
+  const normalized = normalizeTickerQuery(query);
+  if (!normalized) return null;
+  return assets.find((asset) => [asset.ticker, asset.symbol, asset.id]
+    .some((value) => normalizeTickerQuery(value) === normalized)) ?? null;
+}
+
+function matchingCatalogAssets(assets, query, limit = TICKER_SUGGESTION_LIMIT) {
+  const normalized = normalizeTickerQuery(query);
+  const ranked = assets.map((asset, order) => {
+    const ticker = normalizeTickerQuery(asset.ticker ?? asset.symbol);
+    const id = normalizeTickerQuery(asset.id);
+    const name = normalizeTickerQuery(asset.name);
+    const exchange = normalizeTickerQuery(asset.exchange);
+    let rank = normalized ? Infinity : 4;
+    if (normalized && (ticker === normalized || id === normalized)) rank = 0;
+    else if (normalized && ticker.startsWith(normalized)) rank = 1;
+    else if (normalized && name.startsWith(normalized)) rank = 2;
+    else if (normalized && `${ticker} ${name} ${exchange} ${id}`.includes(normalized)) rank = 3;
+    return { asset, order, rank };
+  }).filter(({ rank }) => Number.isFinite(rank));
+  ranked.sort((left, right) => left.rank - right.rank
+    || normalizeTickerQuery(left.asset.ticker).localeCompare(normalizeTickerQuery(right.asset.ticker))
+    || left.order - right.order);
+  return ranked.slice(0, Math.max(1, limit)).map(({ asset }) => asset);
+}
+
+function mergeCatalogLayers(primary, additional) {
+  const result = [...primary];
+  const ids = new Set(primary.map((asset) => asset.id));
+  const tickers = new Set(primary.map((asset) => normalizeTickerQuery(asset.ticker)));
+  for (const asset of additional) {
+    const ticker = normalizeTickerQuery(asset.ticker);
+    if (!asset?.id || !ticker || ids.has(asset.id) || tickers.has(ticker)) continue;
+    result.push(asset);
+    ids.add(asset.id);
+    tickers.add(ticker);
+  }
+  return result;
+}
+
+async function loadOptionalDynamicCatalog() {
+  try {
+    const response = await fetch("./data/dynamic-catalog.json", { cache: "no-cache" });
+    if (!response.ok) return [];
+    const payload = await response.json();
+    if (payload?.contract !== "kelly-dynamic-asset-catalog" || !Array.isArray(payload.assets)) return [];
+    return catalogItems(payload).map((asset) => ({ ...asset, dynamic: true }));
+  } catch {
+    return [];
+  }
+}
+
+function upsertCatalogAsset(entry) {
+  if (!entry?.id) return null;
+  const existing = state.catalog.findIndex((asset) => asset.id === entry.id
+    || normalizeTickerQuery(asset.ticker) === normalizeTickerQuery(entry.ticker));
+  if (existing >= 0) state.catalog.splice(existing, 1, { ...state.catalog[existing], ...entry });
+  else state.catalog.push(entry);
+  return existing >= 0 ? state.catalog[existing] : entry;
+}
+
+async function searchWorkerCatalog(query, limit = TICKER_SUGGESTION_LIMIT) {
+  const normalized = normalizeTickerQuery(query);
+  const endpoint = normalized ? workerEndpoint("/v1/search", { q: normalized, limit }) : null;
+  if (!endpoint) return [];
+  try {
+    const response = await fetch(endpoint, { cache: "no-store" });
+    if (!response.ok) return [];
+    const payload = await response.json();
+    if (payload?.contract !== "kelly-asset-search" || !Array.isArray(payload.assets)) return [];
+    return catalogItems(payload).map((asset, index) => ({
+      ...asset,
+      status: payload.assets[index]?.status ?? STATUS.LIVE_API,
+      dynamic: true,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+function liveTickerEntry(query) {
+  const ticker = normalizeTickerQuery(query);
+  if (!state.runtime.workerBaseUrl || !TICKER_QUERY_PATTERN.test(ticker)) return null;
+  return {
+    id: `live-${ticker.toLowerCase().replaceAll("-", "-dash-").replaceAll(".", "-dot-")}`,
+    ticker,
+    symbol: ticker,
+    name: `${ticker} 즉시조회`,
+    type: "equity",
+    assetType: "equity",
+    exchange: "US",
+    currency: "USD",
+    returnBasis: "total_return_approximation",
+    status: STATUS.LIVE_API,
+    dynamic: true,
+  };
+}
+
+function fuzzyNameCatalogAsset(assets, query) {
+  const normalized = normalizeTickerQuery(query);
+  if (!normalized) return null;
+  const ranked = assets.map((asset, order) => {
+    const name = normalizeTickerQuery(asset.name);
+    const ticker = normalizeTickerQuery(asset.ticker ?? asset.symbol);
+    let rank = Infinity;
+    if (name === normalized) rank = 0;
+    else if (name.startsWith(normalized)) rank = 1;
+    else if (name.split(/[^A-Z0-9]+/).some((token) => token.startsWith(normalized))) rank = 2;
+    else if (name.includes(normalized)) rank = 3;
+    const strictTickerPrefix = ticker !== normalized && ticker.startsWith(normalized);
+    return { asset, order, rank: strictTickerPrefix ? Infinity : rank };
+  }).filter(({ rank }) => Number.isFinite(rank));
+  ranked.sort((left, right) => left.rank - right.rank
+    || normalizeTickerQuery(left.asset.ticker).localeCompare(normalizeTickerQuery(right.asset.ticker))
+    || left.order - right.order);
+  return ranked[0]?.asset ?? null;
+}
+
+async function resolveTickerCommitAsset(query, localAssets, {
+  workerConfigured = Boolean(state.runtime.workerBaseUrl),
+  searchRemote = searchWorkerCatalog,
+  createLiveEntry = liveTickerEntry,
+} = {}) {
+  const normalized = normalizeTickerQuery(query);
+  if (!normalized) return null;
+  const localExact = exactCatalogAsset(localAssets, normalized);
+  if (localExact) return localExact;
+
+  const remoteAssets = workerConfigured ? await searchRemote(normalized) : [];
+  const remoteExact = exactCatalogAsset(remoteAssets, normalized);
+  if (remoteExact) return remoteExact;
+
+  const fuzzyName = fuzzyNameCatalogAsset(mergeCatalogLayers(localAssets, remoteAssets), normalized);
+  if (fuzzyName) return fuzzyName;
+
+  // A bounded, syntactically valid live symbol is safer than silently turning a
+  // ticker prefix (for example GOOG) into another instrument (GOOGL).
+  return workerConfigured && TICKER_QUERY_PATTERN.test(normalized) ? createLiveEntry(normalized) : null;
+}
+
+async function resolveTickerAsset(query, assets = state.catalog) {
+  const exact = exactCatalogAsset(assets, query);
+  if (exact) return exact;
+  const remote = await searchWorkerCatalog(query);
+  const remoteExact = exactCatalogAsset(remote, query);
+  if (remoteExact) return upsertCatalogAsset(remoteExact);
+  return upsertCatalogAsset(liveTickerEntry(query));
+}
+
+function assetTypeLabel(asset) {
+  return ASSET_TYPE_LABELS[asset?.type ?? asset?.assetType] ?? asset?.type ?? asset?.assetType ?? "자산";
+}
+
+function setComboboxSelection(input, entry) {
+  if (!input) return;
+  input.value = entry?.ticker ?? entry?.symbol ?? "";
+  input.dataset.assetId = entry?.id ?? "";
+  input.setCustomValidity("");
+}
+
+function closeTickerOptions(input, list) {
+  if (!input || !list) return;
+  list.hidden = true;
+  input.setAttribute("aria-expanded", "false");
+  input.removeAttribute("aria-activedescendant");
+}
+
+function configureTickerCombobox(input, list, {
+  assets = () => state.catalog,
+  selectedId = null,
+  onSelect = () => {},
+  onInvalid = () => {},
+} = {}) {
+  if (!input || !list) return null;
+  let matches = [];
+  let activeIndex = -1;
+  let searchGeneration = 0;
+  let searchTimer = null;
+
+  const optionId = (index) => `${list.id}-option-${index}`;
+  const setActive = (index) => {
+    if (!matches.length) {
+      activeIndex = -1;
+      input.removeAttribute("aria-activedescendant");
+      return;
+    }
+    activeIndex = Math.max(0, Math.min(matches.length - 1, index));
+    $$("[role=option]", list).forEach((option, optionIndex) => {
+      const active = optionIndex === activeIndex;
+      option.classList.toggle("is-active", active);
+      option.setAttribute("aria-selected", String(active));
+    });
+    const active = document.getElementById(optionId(activeIndex));
+    if (active) {
+      input.setAttribute("aria-activedescendant", active.id);
+      active.scrollIntoView?.({ block: "nearest" });
+    }
+  };
+  const render = (nextMatches, { open = true } = {}) => {
+    matches = nextMatches;
+    activeIndex = -1;
+    if (!matches.length) {
+      list.innerHTML = '<div class="ticker-options-empty">일치하는 공개 종목이 없습니다. 티커를 확인해 주세요.</div>';
+    } else {
+      list.innerHTML = matches.map((asset, index) => {
+        const status = [STATUS.PUBLISHED, STATUS.LIVE_API].includes(asset.status) ? assetTypeLabel(asset) : asset.status;
+        return `<div id="${optionId(index)}" class="ticker-option" role="option" aria-selected="false" data-option-index="${index}"><strong>${escapeHtml(asset.ticker)}</strong><span>${escapeHtml(asset.name)}</span><small>${escapeHtml(status)}</small></div>`;
+      }).join("");
+    }
+    list.hidden = !open;
+    input.setAttribute("aria-expanded", String(open));
+    input.removeAttribute("aria-activedescendant");
+  };
+  const refresh = ({ remote = false, open = true } = {}) => {
+    const query = input.value;
+    const local = matchingCatalogAssets(assets(), query);
+    render(local, { open });
+    if (!remote || !normalizeTickerQuery(query) || !state.runtime.workerBaseUrl) return;
+    const generation = ++searchGeneration;
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(async () => {
+      const remoteAssets = await searchWorkerCatalog(query);
+      if (generation !== searchGeneration || normalizeTickerQuery(input.value) !== normalizeTickerQuery(query)) return;
+      const combined = [...local];
+      for (const asset of remoteAssets) {
+        if (!combined.some((candidate) => candidate.id === asset.id
+          || normalizeTickerQuery(candidate.ticker) === normalizeTickerQuery(asset.ticker))) combined.push(asset);
+      }
+      render(matchingCatalogAssets(combined, query), { open: document.activeElement === input });
+    }, 180);
+  };
+  const choose = async (entry) => {
+    if (!entry) return false;
+    searchGeneration += 1;
+    clearTimeout(searchTimer);
+    const catalogEntry = upsertCatalogAsset(entry) ?? entry;
+    setComboboxSelection(input, catalogEntry);
+    closeTickerOptions(input, list);
+    await onSelect(catalogEntry);
+    return true;
+  };
+  const commit = async () => {
+    const query = normalizeTickerQuery(input.value);
+    const entry = activeIndex >= 0
+      ? matches[activeIndex]
+      : await resolveTickerCommitAsset(query, assets());
+    if (entry) return choose(entry);
+    input.setCustomValidity("지원되는 티커를 입력하세요.");
+    input.reportValidity?.();
+    onInvalid(query);
+    return false;
+  };
+
+  if (selectedId) setComboboxSelection(input, assets().find((asset) => asset.id === selectedId));
+  input.addEventListener("input", () => {
+    const selected = assets().find((asset) => asset.id === input.dataset.assetId);
+    if (!selected || normalizeTickerQuery(input.value) !== normalizeTickerQuery(selected.ticker)) input.dataset.assetId = "";
+    input.setCustomValidity("");
+    refresh({ remote: true });
+  });
+  input.addEventListener("focus", () => refresh({ remote: false }));
+  input.addEventListener("keydown", (event) => {
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
+      if (list.hidden) refresh({ remote: false });
+      setActive(event.key === "ArrowDown" ? activeIndex + 1 : (activeIndex < 0 ? matches.length - 1 : activeIndex - 1));
+    } else if (event.key === "Enter") {
+      event.preventDefault();
+      void commit();
+    } else if (event.key === "Escape") {
+      event.preventDefault();
+      closeTickerOptions(input, list);
+    }
+  });
+  input.addEventListener("blur", () => setTimeout(() => closeTickerOptions(input, list), 0));
+  list.addEventListener("pointerdown", (event) => {
+    const option = event.target.closest?.("[data-option-index]");
+    if (!option) return;
+    event.preventDefault();
+    void choose(matches[Number(option.dataset.optionIndex)]);
+  });
+  return { commit, refresh, setSelection: (entry) => setComboboxSelection(input, entry) };
 }
 
 function normalizeWorkerBaseUrl(value) {
@@ -594,27 +898,40 @@ function workerEndpoint(pathname, parameters = {}) {
   return url;
 }
 
-async function workerReady() {
+function workerHealthSupportsHistory(payload) {
+  return workerHealthSupportsCapability(payload, "usHistory");
+}
+
+function workerHealthSupportsCapability(payload, capability) {
+  if (payload?.state !== STATUS.LIVE_API) return false;
+  if (payload?.capabilities?.[capability] === STATUS.LIVE_API) return true;
+  return capability === "usHistory" && payload?.rightsApproved === true;
+}
+
+function workerCapabilityForPath(pathname) {
+  return pathname === "/v1/fx" ? "fx" : "usHistory";
+}
+
+async function workerReady(capability = "usHistory") {
   if (!state.runtime.workerBaseUrl) return false;
-  if (state.workerHealth !== null) return state.workerHealth;
+  if (state.workerHealth !== null) return workerHealthSupportsCapability(state.workerHealth, capability);
   if (!state.workerHealthPromise) {
     state.workerHealthPromise = (async () => {
       try {
         const response = await fetch(workerEndpoint("/v1/health"), { cache: "no-store" });
         if (!response.ok) return false;
-        const payload = await response.json();
-        return payload?.state === STATUS.LIVE_API && payload?.rightsApproved === true;
+        return response.json();
       } catch {
         return false;
       }
     })();
   }
   state.workerHealth = await state.workerHealthPromise;
-  return state.workerHealth;
+  return workerHealthSupportsCapability(state.workerHealth, capability);
 }
 
 async function fetchWorkerDocument(pathname, parameters) {
-  if (!(await workerReady())) return null;
+  if (!(await workerReady(workerCapabilityForPath(pathname)))) return null;
   try {
     const response = await fetch(workerEndpoint(pathname, parameters), { cache: "no-store" });
     if (!response.ok) return null;
@@ -625,12 +942,12 @@ async function fetchWorkerDocument(pathname, parameters) {
   }
 }
 
-function applyCatalogShareInputs() {
+async function applyCatalogShareInputs() {
   const portfolio = initialShareState.portfolio;
   if (portfolio?.source !== "historical" || !portfolio.historicalAssetIds) return;
-  const eligibleIds = new Set(eligiblePortfolioCatalog().map((asset) => asset.id));
-  if (!portfolio.historicalAssetIds.every((id) => eligibleIds.has(id))) return;
-  state.portfolioHistoryIds = [...portfolio.historicalAssetIds];
+  const resolved = await Promise.all(portfolio.historicalAssetIds.map((token) => resolveTickerAsset(token, eligiblePortfolioCatalog())));
+  if (resolved.some((entry) => !entry || ["fx", "currency"].includes(entry.type))) return;
+  state.portfolioHistoryIds = resolved.map((entry) => entry.id);
   state.portfolioMatrices.historical = identityMatrix(state.portfolioHistoryIds.length);
   state.portfolioMatrixEdited.historical = false;
   if (portfolio.start && portfolio.end) {
@@ -644,59 +961,37 @@ async function loadCatalog() {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const payload = await response.json();
     state.catalogMeta = payload;
-    state.catalog = catalogItems(payload);
+    const coreCatalog = catalogItems(payload);
+    state.catalog = mergeCatalogLayers(coreCatalog, await loadOptionalDynamicCatalog());
     if (!state.catalog.length) throw new Error("empty catalog");
-    populateAssetSelect();
-    applyCatalogShareInputs();
+    await applyCatalogShareInputs();
     renderPortfolioRows();
     const desired = initialShareState.historical?.asset;
     const initial = state.catalog.find((asset) => asset.id === desired || asset.ticker === desired)
+      ?? (desired ? await resolveTickerAsset(desired) : null)
       ?? state.catalog.find((asset) => asset.ticker === "SPY")
       ?? state.catalog.find((asset) => [STATUS.PUBLISHED, STATUS.LIVE_API].includes(asset.status))
       ?? state.catalog[0];
-    $("#asset-select").value = initial.id;
-    await loadSelectedAsset();
+    historicalTickerCombobox?.setSelection(initial);
+    await loadSelectedAsset(initial);
     if (desired === "csv-upload") {
       showNotice("업로드 CSV는 URL에 포함되지 않습니다. 공유 링크에서 복원할 수 없어 기본 공개 자산으로 열었습니다.", "error", "historical");
     }
   } catch (error) {
-    $("#asset-select").innerHTML = '<option value="">정적 데이터 이용 불가</option>';
+    $("#asset-input").placeholder = "정적 카탈로그 이용 불가";
     showNotice(`과거 데이터 계약을 불러오지 못했습니다. (${error.message})`, "error", "historical");
     setHistoricalAvailability(false);
     renderUnavailableHistorical(REASON.DATA_UNAVAILABLE);
   }
 }
 
-function populateAssetSelect() {
-  const grouped = Map.groupBy ? Map.groupBy(state.catalog, (asset) => asset.type) : state.catalog.reduce((map, asset) => {
-    const key = asset.type;
-    if (!map.has(key)) map.set(key, []);
-    map.get(key).push(asset);
-    return map;
-  }, new Map());
-  const labels = { stock: "주식", equity: "주식", index: "지수", etf: "ETF", leveraged_etf: "레버리지 ETF", fx: "환율", currency: "환율" };
-  const select = $("#asset-select");
-  select.replaceChildren();
-  for (const [type, assets] of grouped) {
-    const group = document.createElement("optgroup");
-    group.label = labels[type] ?? type;
-    for (const asset of assets) {
-      const option = document.createElement("option");
-      option.value = asset.id;
-      option.textContent = `${asset.ticker} · ${asset.name}`;
-      if (![STATUS.PUBLISHED, STATUS.LIVE_API].includes(asset.status)) option.textContent += ` (${asset.status})`;
-      group.append(option);
-    }
-    select.append(group);
-  }
-}
-
 function assetPath(entry) {
   const explicit = entry.dataPath ?? entry.data_path ?? entry.assetFile ?? entry.asset_file;
   if (explicit) {
-    if (explicit.startsWith(".") || explicit.startsWith("/")) return explicit;
-    if (explicit.startsWith("assets/")) return `./data/${explicit}`;
-    return `./${explicit}`;
+    if (explicit.startsWith("/")) return explicit;
+    if (explicit.startsWith("./data/")) return explicit;
+    if (explicit.startsWith("data/")) return `./${explicit}`;
+    return `./data/${explicit.replace(/^\.\//, "")}`;
   }
   return `./data/assets/${encodeURIComponent(entry.id)}.json`;
 }
@@ -878,9 +1173,13 @@ async function seriesForCurrency(payload, requestedCurrency) {
   return seriesFromPayload(payload, requestedCurrency, fxPayload);
 }
 
-async function loadSelectedAsset() {
-  const id = $("#asset-select").value;
-  const entry = state.catalog.find((asset) => asset.id === id);
+function selectedHistoricalAssetId() {
+  return $("#asset-input")?.dataset.assetId ?? "";
+}
+
+async function loadSelectedAsset(selectedEntry = null) {
+  const id = selectedEntry?.id ?? selectedHistoricalAssetId();
+  const entry = selectedEntry ?? state.catalog.find((asset) => asset.id === id);
   const generation = nextRequestGeneration("asset");
   nextRequestGeneration("currency");
   nextRequestGeneration("leverage");
@@ -889,10 +1188,11 @@ async function loadSelectedAsset() {
   setCurrencyControlsDisabled(true);
   showNotice(`${entry?.ticker ?? "선택 자산"} 이력을 불러오는 중입니다.`, "info", "historical");
   try {
+    if (!entry) throw new Error(REASON.DATA_UNAVAILABLE);
     const payload = await fetchAssetPayload(entry);
-    if (!isCurrentRequest("asset", generation) || $("#asset-select").value !== id) return;
+    if (!isCurrentRequest("asset", generation) || selectedHistoricalAssetId() !== id) return;
     const series = await seriesForCurrency(payload, requestedCurrency);
-    if (!isCurrentRequest("asset", generation) || $("#asset-select").value !== id || state.currency !== requestedCurrency) return;
+    if (!isCurrentRequest("asset", generation) || selectedHistoricalAssetId() !== id || state.currency !== requestedCurrency) return;
     if (series.status && ![STATUS.PUBLISHED, STATUS.LIVE_API, STATUS.STALE, STATUS.DEGRADED].includes(series.status)) throw new Error(series.status);
     if (series.returns.length < 2 || series.dates.length < 3) throw new Error(REASON.INSUFFICIENT_OBSERVATIONS);
     state.assetEntry = entry;
@@ -912,7 +1212,7 @@ async function loadSelectedAsset() {
   } catch (error) {
     if (!isCurrentRequest("asset", generation)) return;
     if (previousEntry && state.series && state.period) {
-      $("#asset-select").value = previousEntry.id;
+      historicalTickerCombobox?.setSelection(previousEntry);
       renderAssetMeta(previousEntry, state.series.source, state.rawPayload?.quality, state.series.returns.length);
       setHistoricalAvailability(true);
       showNotice(`${entry?.ticker ?? "선택 자산"} 이력을 적용하지 않고 기존 공식 결과를 보존했습니다. (${reasonText(error.message)})`, "error", "historical");
@@ -1586,15 +1886,15 @@ async function importCsvFile(file) {
     if (existingIndex >= 0) state.catalog.splice(existingIndex, 1, entry);
     else state.catalog.unshift(entry);
     state.assetCache.set(entry.id, Promise.resolve(payload));
-    populateAssetSelect();
-    $("#asset-select").value = entry.id;
+    historicalTickerCombobox?.setSelection(entry);
+    historicalTickerCombobox?.refresh({ remote: false, open: false });
     state.currency = "native";
     $$("[data-currency]").forEach((button) => {
       const active = button.dataset.currency === "native";
       button.classList.toggle("is-active", active);
       button.setAttribute("aria-pressed", String(active));
     });
-    await loadSelectedAsset();
+    await loadSelectedAsset(entry);
     showNotice(`${payload.metadata.symbol} CSV ${payload.dates.length.toLocaleString("ko-KR")}개 가격을 불러왔습니다.`, "success", "historical");
   } catch (error) {
     showNotice(`CSV를 적용하지 않았습니다. date·price 열, 날짜 중복, 양수 가격을 확인하세요. (${reasonText(error.message)})`, "error", "historical");
@@ -1669,7 +1969,15 @@ function toggleWealthDataTable() {
 }
 
 function configureHistoricalEvents() {
-  $("#asset-select").addEventListener("change", loadSelectedAsset);
+  historicalTickerCombobox = configureTickerCombobox($("#asset-input"), $("#asset-options"), {
+    assets: () => state.catalog,
+    onSelect: (entry) => loadSelectedAsset(entry),
+    onInvalid: (query) => {
+      if (state.assetEntry) historicalTickerCombobox?.setSelection(state.assetEntry);
+      showNotice(`${query || "입력한 값"}을 공개 카탈로그 또는 즉시조회에서 찾지 못해 기존 공식 결과를 보존했습니다.`, "error", "historical");
+    },
+  });
+  $("#asset-submit")?.addEventListener("click", () => void historicalTickerCombobox?.commit());
   $("#csv-upload")?.addEventListener("click", () => $("#csv-file")?.click());
   $("#csv-file")?.addEventListener("change", async (event) => {
     await importCsvFile(event.target.files?.[0]);
@@ -1791,7 +2099,7 @@ function collectCurrentShareState() {
   if (mode === "historical") return {
     mode,
     historical: {
-      asset: state.assetEntry?.id ?? $("#asset-select")?.value,
+      asset: state.assetEntry?.dynamic ? state.assetEntry.ticker : state.assetEntry?.id ?? selectedHistoricalAssetId(),
       start: state.period?.official.start ?? $("#official-start")?.value,
       end: state.period?.official.end ?? $("#official-end")?.value,
       currency: state.currency,
@@ -1821,7 +2129,10 @@ function collectCurrentShareState() {
       cap: $("#portfolio-cap")?.value,
       directAssets: state.portfolioDirectAssets.map(({ name, expectedExcess, volatility }) => ({ name, expectedExcess, volatility })),
       correlation: state.portfolioMatrices.direct.map((row) => [...row]),
-      historicalAssetIds: [...state.portfolioHistoryIds],
+      historicalAssetIds: state.portfolioHistoryIds.map((id) => {
+        const entry = state.catalog.find((asset) => asset.id === id);
+        return entry?.dynamic ? entry.ticker : id;
+      }),
       start: $("#portfolio-history-start")?.value || state.portfolioHistoryPeriod.start,
       end: $("#portfolio-history-end")?.value || state.portfolioHistoryPeriod.end,
       rebalance: $("#portfolio-rebalance-frequency")?.value,
@@ -2142,27 +2453,35 @@ function renderDirectPortfolioRows() {
   $$('[data-remove-direct]', tbody).forEach((button) => button.addEventListener("click", () => removePortfolioAsset(button.dataset.removeDirect)));
 }
 
-function historicalAssetOptions(selectedId) {
-  const assets = eligiblePortfolioCatalog();
-  if (!assets.length) return '<option value="">카탈로그 이용 불가</option>';
-  return assets.map((asset) => {
-    const stateLabel = [STATUS.PUBLISHED, STATUS.LIVE_API].includes(asset.status) ? "" : ` · ${asset.status}`;
-    return `<option value="${escapeHtml(asset.id)}" ${asset.id === selectedId ? "selected" : ""}>${escapeHtml(asset.ticker)} · ${escapeHtml(asset.name)}${escapeHtml(stateLabel)}</option>`;
-  }).join("");
-}
-
 function renderHistoricalPortfolioRows() {
   const list = $("#portfolio-history-assets");
-  list.innerHTML = state.portfolioHistoryIds.map((id, index) => `
+  list.innerHTML = state.portfolioHistoryIds.map((id, index) => {
+    const entry = state.catalog.find((asset) => asset.id === id);
+    return `
     <div class="history-asset-row">
-      <label class="field"><span>${index + 1}번째 자산</span><select data-history-index="${index}">${historicalAssetOptions(id)}</select></label>
+      <div class="field">
+        <label for="portfolio-ticker-${index}">${index + 1}번째 자산 티커</label>
+        <div class="ticker-combobox">
+          <input id="portfolio-ticker-${index}" data-history-index="${index}" data-asset-id="${escapeHtml(id)}" value="${escapeHtml(entry?.ticker ?? id)}" type="text" role="combobox" aria-autocomplete="list" aria-controls="portfolio-ticker-options-${index}" aria-expanded="false" autocomplete="off" autocapitalize="characters" spellcheck="false">
+          <div id="portfolio-ticker-options-${index}" class="ticker-options" role="listbox" aria-label="${index + 1}번째 자산 검색 결과" hidden></div>
+        </div>
+      </div>
       <button class="remove-asset" type="button" data-remove-history="${index}" aria-label="${index + 1}번째 자산 삭제">×</button>
-    </div>`).join("");
-  $$('[data-history-index]', list).forEach((select) => select.addEventListener("change", () => {
-    state.portfolioHistoryIds[Number(select.dataset.historyIndex)] = select.value;
-    invalidateHistoricalPortfolio();
-    renderPortfolioRows();
-  }));
+    </div>`;
+  }).join("");
+  $$('[data-history-index]', list).forEach((input) => {
+    const index = Number(input.dataset.historyIndex);
+    configureTickerCombobox(input, $(`#portfolio-ticker-options-${index}`), {
+      assets: eligiblePortfolioCatalog,
+      selectedId: state.portfolioHistoryIds[index],
+      onSelect: (entry) => {
+        state.portfolioHistoryIds[index] = entry.id;
+        invalidateHistoricalPortfolio();
+        renderPortfolioRows();
+      },
+      onInvalid: (query) => { $("#portfolio-error").textContent = `${query || "입력한 값"}을 공개 카탈로그 또는 즉시조회에서 찾지 못했습니다.`; },
+    });
+  });
   $$('[data-remove-history]', list).forEach((button) => button.addEventListener("click", () => removePortfolioAsset(Number(button.dataset.removeHistory))));
 }
 
@@ -2468,24 +2787,34 @@ function bootstrap() {
 
 export const testSupport = {
   alignPreviousFx,
+  assetPath,
   computeHistoricalAnalysis,
+  configureTickerCombobox,
   defaultFiveYearCommonRange,
+  exactCatalogAsset,
   fiveYearRange,
   flattenWorkerPayload,
   isReusableStaticPayload,
   isShareableHistoricalAssetId,
   historicalKellyEligibility,
+  matchingCatalogAssets,
+  mergeCatalogLayers,
   normalizeWorkerBaseUrl,
+  normalizeTickerQuery,
   noticeForMode,
   parsePriceCsv,
   parseShareState,
   quickPeriodStart,
   qualityMetaHtml,
   removeCorrelationIndex,
+  resolveTickerCommitAsset,
   resizeCorrelationMatrix,
   serializeShareState,
   seriesFromPayload,
   sourceAttributionHtml,
+  workerCapabilityForPath,
+  workerHealthSupportsCapability,
+  workerHealthSupportsHistory,
 };
 
 if (!globalThis.__KELLY_APP_TEST__) bootstrap();

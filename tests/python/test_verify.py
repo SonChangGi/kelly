@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
 import shutil
 from pathlib import Path
@@ -72,13 +73,215 @@ def _published_spy() -> tuple[dict, dict]:
 def _contract_root(tmp_path: Path) -> Path:
     for directory in ("config", "data", "schemas", "worker"):
         shutil.copytree(ROOT / directory, tmp_path / directory)
+    (tmp_path / "data/dynamic-catalog.json").unlink(missing_ok=True)
+    shutil.rmtree(tmp_path / "data/dynamic-assets", ignore_errors=True)
     return tmp_path
+
+
+def _install_dynamic_fixture(root: Path) -> tuple[Path, Path]:
+    dates = ["2026-07-01", "2026-07-02"]
+    prices = [100.0, 101.0]
+    digest_payload = "\n".join(
+        f"{day}:{float(price):.12g}" for day, price in zip(dates, prices, strict=True)
+    )
+    document = {
+        "schemaVersion": 1,
+        "contract": "kelly-asset-history",
+        "state": "degraded",
+        "assetId": "dynamic-us-cost",
+        "generatedAt": "2026-07-03T00:00:00+00:00",
+        "dataAsOf": dates[-1],
+        "metadata": {
+            "symbol": "COST",
+            "assetType": "equity",
+            "exchange": "NasdaqGS",
+            "timezone": "America/New_York",
+            "returnBasis": "total_return_approximation",
+            "baseCurrency": "USD",
+            "catalogScope": "dynamic",
+            "providerSymbol": "COST",
+            "providerExchangeCode": "NMS",
+            "instrumentType": "EQUITY",
+            "displayName": "Costco Wholesale Corporation",
+            "firstTradeDate": "1986-07-09",
+        },
+        "dates": dates,
+        "prices": prices,
+        "returns": [None, 0.01],
+        "source": {
+            "provider": "yahoo_finance",
+            "adapter": "native",
+            "contentDigest": hashlib.sha256(digest_payload.encode("utf-8")).hexdigest(),
+            "normalized": True,
+            "rawRedistribution": False,
+            "sourceUrl": "https://finance.yahoo.com/",
+            "license": "Yahoo Finance research data; no vendor license asserted",
+            "attribution": "Fixture Yahoo Finance",
+            "cachedAt": "2026-07-03T00:00:00+00:00",
+        },
+        "quality": {
+            "observationCount": 2,
+            "eligibleForKelly": False,
+            "minimumKellyObservations": 60,
+            "crossCheck": {
+                "provider": "stooq",
+                "state": "unavailable",
+                "commonObservations": 0,
+                "windowStart": None,
+                "windowEnd": None,
+                "medianAbsReturnDifference": None,
+                "p99AbsReturnDifference": None,
+            },
+        },
+        "limitations": ["Fixture dynamic research data."],
+    }
+    dynamic_directory = root / "data/dynamic-assets"
+    dynamic_directory.mkdir()
+    asset_path = dynamic_directory / "dynamic-us-cost.json"
+    asset_path.write_text(json.dumps(document), encoding="utf-8")
+    entry = {
+        "id": "dynamic-us-cost",
+        "symbol": "COST",
+        "name": "Costco Wholesale Corporation",
+        "assetType": "equity",
+        "exchange": "NasdaqGS",
+        "currency": "USD",
+        "timezone": "America/New_York",
+        "returnBasis": "total_return_approximation",
+        "dataPath": "dynamic-assets/dynamic-us-cost.json",
+        "state": "degraded",
+        "status": "degraded",
+        "dataAsOf": dates[-1],
+        "observationCount": 2,
+        "source": {"provider": "yahoo_finance", "adapter": "native"},
+    }
+    manifest = {
+        "schemaVersion": 1,
+        "contract": "kelly-dynamic-asset-catalog",
+        "generatedAt": "2026-07-03T00:00:00+00:00",
+        "universeSource": "symbol_file",
+        "universeFallbackReason": None,
+        "requestedCount": 1,
+        "attemptedCount": 1,
+        "excludedCoreCount": 0,
+        "freshCount": 1,
+        "preservedCount": 0,
+        "prunedCount": 0,
+        "assetCount": 1,
+        "failures": [],
+        "assets": [entry],
+    }
+    manifest_path = root / "data/dynamic-catalog.json"
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    return manifest_path, asset_path
 
 
 def test_repository_contracts_and_worker_fixtures_pass() -> None:
     hashes = validate_local(ROOT)
 
     assert set(hashes) == {"summary", "catalog", "automation"}
+
+
+def test_validate_local_accepts_integral_dynamic_manifest(tmp_path: Path) -> None:
+    root = _contract_root(tmp_path)
+    _install_dynamic_fixture(root)
+    validate_local(root)
+
+
+@pytest.mark.parametrize(
+    ("target", "value", "message"),
+    [
+        ("source.contentDigest", "0" * 64, "dynamic content digest mismatch"),
+        ("metadata.providerSymbol", "MSFT", "dynamic provider symbol mismatch"),
+        ("metadata.instrumentType", "ETF", "dynamic instrument type mismatch"),
+        ("metadata.firstTradeDate", "2026-07-02", "first-trade boundary mismatch"),
+    ],
+)
+def test_validate_local_rejects_dynamic_identity_and_digest_forgery(
+    tmp_path: Path,
+    target: str,
+    value: str,
+    message: str,
+) -> None:
+    root = _contract_root(tmp_path)
+    _manifest_path, asset_path = _install_dynamic_fixture(root)
+    document = _load(asset_path)
+    owner, field = target.split(".")
+    document[owner][field] = value
+    asset_path.write_text(json.dumps(document), encoding="utf-8")
+
+    with pytest.raises(ValueError, match=message):
+        validate_local(root)
+
+
+@pytest.mark.parametrize(
+    ("target", "name"),
+    [
+        ("metadata", "Acme Series A Preferred Stock"),
+        ("manifest", "Acme Units, Each Consisting of One Common Share"),
+        ("manifest", "Acme Warrants"),
+        ("manifest", "Acme 5.00% Notes Due 2030"),
+    ],
+)
+def test_validate_local_rejects_dynamic_non_common_security_names(
+    tmp_path: Path,
+    target: str,
+    name: str,
+) -> None:
+    root = _contract_root(tmp_path)
+    manifest_path, asset_path = _install_dynamic_fixture(root)
+    if target == "metadata":
+        document = _load(asset_path)
+        document["metadata"]["displayName"] = name
+        asset_path.write_text(json.dumps(document), encoding="utf-8")
+    else:
+        manifest = _load(manifest_path)
+        manifest["assets"][0]["name"] = name
+        manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="dynamic non-common security is excluded"):
+        validate_local(root)
+
+
+def test_validate_local_rejects_dynamic_manifest_projection_and_orphan(tmp_path: Path) -> None:
+    root = _contract_root(tmp_path)
+    manifest_path, asset_path = _install_dynamic_fixture(root)
+    manifest = _load(manifest_path)
+    manifest["assets"][0]["observationCount"] = 3
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    with pytest.raises(ValueError, match="dynamic manifest/asset projection mismatch"):
+        validate_local(root)
+
+    manifest["assets"][0]["observationCount"] = 2
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    shutil.copy2(asset_path, root / "data/dynamic-assets/dynamic-us-orphan.json")
+    with pytest.raises(ValueError, match="unreferenced dynamic asset must be pruned"):
+        validate_local(root)
+
+
+def test_validate_local_rejects_dynamic_path_escape_and_future_history(tmp_path: Path) -> None:
+    root = _contract_root(tmp_path)
+    manifest_path, asset_path = _install_dynamic_fixture(root)
+    manifest = _load(manifest_path)
+    manifest["assets"][0]["dataPath"] = "../assets/stock-aapl.json"
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    with pytest.raises(ValueError, match="dynamic catalog contract invalid"):
+        validate_local(root)
+
+    manifest["assets"][0]["dataPath"] = "dynamic-assets/dynamic-us-cost.json"
+    manifest["assets"][0]["dataAsOf"] = "2999-01-02"
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    document = _load(asset_path)
+    document["dates"] = ["2999-01-01", "2999-01-02"]
+    document["dataAsOf"] = "2999-01-02"
+    digest_payload = "\n".join(
+        f"{day}:{float(price):.12g}"
+        for day, price in zip(document["dates"], document["prices"], strict=True)
+    )
+    document["source"]["contentDigest"] = hashlib.sha256(digest_payload.encode("utf-8")).hexdigest()
+    asset_path.write_text(json.dumps(document), encoding="utf-8")
+    with pytest.raises(ValueError, match="future date"):
+        validate_local(root)
 
 
 def test_validate_local_rejects_credentialed_runtime_worker_url(tmp_path: Path) -> None:

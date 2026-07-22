@@ -1,4 +1,4 @@
-.PHONY: setup test verify build serve
+.PHONY: setup test verify build build-local serve serve-local
 
 setup:
 	uv sync
@@ -18,5 +18,11 @@ verify:
 build:
 	npm run build
 
+build-local:
+	npm run build:local
+
 serve: build
 	npm run serve
+
+serve-local: build-local
+	npm run serve:local

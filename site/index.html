@@ -7,7 +7,7 @@
     <meta name="color-scheme" content="light dark">
     <title>Kelly Allocation Lab</title>
     <link rel="icon" href="./favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="./assets/styles.css?v=20260722.4">
+    <link rel="stylesheet" href="./assets/styles.css?v=20260722.5">
   </head>
   <body>
     <a class="skip-link" href="#main-content">본문으로 건너뛰기</a>
@@ -78,10 +78,17 @@
         <div class="workspace-grid">
           <aside class="control-panel" aria-label="과거 데이터 분석 입력">
             <div class="section-heading"><span>01</span><div><h2>분석 대상</h2><p>공식 가격·수익률 계약만 사용</p></div></div>
-            <label class="field field-wide">
-              <span>종목 · 지수 · ETF</span>
-              <select id="asset-select"><option value="">카탈로그 불러오는 중…</option></select>
-            </label>
+            <div class="field field-wide">
+              <label for="asset-input">종목 · 지수 · ETF 티커</label>
+              <div class="ticker-input-row">
+                <div class="ticker-combobox">
+                  <input id="asset-input" type="text" role="combobox" aria-autocomplete="list" aria-controls="asset-options" aria-expanded="false" aria-describedby="asset-input-help" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="예: NVDA, SPY, ^GSPC">
+                  <div id="asset-options" class="ticker-options" role="listbox" aria-label="검색된 종목" hidden></div>
+                </div>
+                <button id="asset-submit" class="secondary-button ticker-submit" type="button">분석</button>
+              </div>
+              <small id="asset-input-help" class="field-help">티커나 종목명을 입력한 뒤 Enter를 누르세요. 방향키로 검색 결과를 선택할 수 있습니다.</small>
+            </div>
             <div id="asset-meta" class="asset-meta" aria-live="polite"></div>
 
             <fieldset class="segmented-field">
@@ -311,6 +318,6 @@
       <div class="footer-links"><a href="./data/summary.json">공개 데이터 계약</a><a href="https://github.com/SonChangGi/kelly">GitHub</a></div>
     </footer>
 
-    <script type="module" src="./assets/app.js?v=20260722.4"></script>
+    <script type="module" src="./assets/app.js?v=20260722.5"></script>
   </body>
 </html>

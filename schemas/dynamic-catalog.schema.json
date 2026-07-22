@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sonchanggi.github.io/kelly/schemas/dynamic-catalog.schema.json",
+  "title": "Kelly dynamic US asset catalog",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "contract",
+    "generatedAt",
+    "universeSource",
+    "universeFallbackReason",
+    "requestedCount",
+    "attemptedCount",
+    "excludedCoreCount",
+    "freshCount",
+    "preservedCount",
+    "prunedCount",
+    "assetCount",
+    "failures",
+    "assets"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "contract": { "const": "kelly-dynamic-asset-catalog" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "universeSource": {
+      "type": "string",
+      "enum": ["nasdaq_screener", "finance_data_reader_listing", "symbol_file", "mixed"]
+    },
+    "universeFallbackReason": {
+      "oneOf": [
+        { "const": "nasdaq_screener_unavailable" },
+        { "type": "null" }
+      ]
+    },
+    "requestedCount": { "type": "integer", "minimum": 1, "maximum": 500 },
+    "attemptedCount": { "type": "integer", "minimum": 1, "maximum": 5000 },
+    "excludedCoreCount": { "type": "integer", "minimum": 0, "maximum": 50 },
+    "freshCount": { "type": "integer", "minimum": 1, "maximum": 500 },
+    "preservedCount": { "type": "integer", "minimum": 0, "maximum": 500 },
+    "prunedCount": { "type": "integer", "minimum": 0, "maximum": 5000 },
+    "assetCount": { "type": "integer", "minimum": 1, "maximum": 500 },
+    "failures": {
+      "type": "array",
+      "maxItems": 5001,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["symbol", "reason"],
+        "properties": {
+          "symbol": { "type": "string", "minLength": 1, "maxLength": 24 },
+          "reason": { "type": "string", "pattern": "^[a-z0-9_]+$" }
+        }
+      }
+    },
+    "assets": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 500,
+      "items": { "$ref": "#/$defs/asset" }
+    }
+  },
+  "$defs": {
+    "state": {
+      "type": "string",
+      "enum": ["published", "live_api", "stale", "degraded"]
+    },
+    "asset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "symbol",
+        "name",
+        "assetType",
+        "exchange",
+        "currency",
+        "timezone",
+        "returnBasis",
+        "dataPath",
+        "state",
+        "status",
+        "dataAsOf",
+        "observationCount",
+        "source"
+      ],
+      "properties": {
+        "id": { "type": "string", "pattern": "^dynamic-us-[a-z0-9-]+$" },
+        "symbol": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9]{0,9}(?:-[A-Z0-9]{1,5})?$"
+        },
+        "name": { "type": "string", "minLength": 1, "maxLength": 240 },
+        "assetType": { "type": "string", "enum": ["equity", "etf"] },
+        "exchange": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "currency": { "const": "USD" },
+        "timezone": { "const": "America/New_York" },
+        "returnBasis": {
+          "type": "string",
+          "enum": ["price_return", "total_return_approximation"]
+        },
+        "dataPath": {
+          "type": "string",
+          "pattern": "^dynamic-assets/dynamic-us-[a-z0-9-]+\\.json$"
+        },
+        "state": { "$ref": "#/$defs/state" },
+        "status": { "$ref": "#/$defs/state" },
+        "dataAsOf": { "type": "string", "format": "date" },
+        "observationCount": { "type": "integer", "minimum": 2 },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["provider", "adapter"],
+          "properties": {
+            "provider": { "type": "string", "enum": ["yahoo_finance", "stooq"] },
+            "adapter": {
+              "type": "string",
+              "enum": ["native", "finance_data_reader", "none"]
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -21,11 +21,173 @@ test("runtime Worker URL is nullable and accepts only credential-free HTTPS URLs
   assert.equal(testSupport.normalizeWorkerBaseUrl("https://worker.example.test/"), "https://worker.example.test");
 });
 
+test("Worker readiness is capability-specific for history and FX", () => {
+  assert.equal(testSupport.workerHealthSupportsHistory({
+    state: "live_api",
+    keyRequired: false,
+    capabilities: { usHistory: "live_api" },
+  }), true);
+  assert.equal(testSupport.workerHealthSupportsHistory({ state: "live_api", rightsApproved: true }), true);
+  assert.equal(testSupport.workerHealthSupportsHistory({ state: "live_api", capabilities: { usHistory: "unavailable" } }), false);
+  assert.equal(testSupport.workerHealthSupportsHistory({ state: "unavailable", rightsApproved: true }), false);
+  const fxOnly = {
+    state: "live_api",
+    rightsApproved: false,
+    capabilities: { usHistory: "unavailable", fx: "live_api" },
+  };
+  assert.equal(testSupport.workerHealthSupportsCapability(fxOnly, "usHistory"), false);
+  assert.equal(testSupport.workerHealthSupportsCapability(fxOnly, "fx"), true);
+  assert.equal(testSupport.workerCapabilityForPath("/v1/history"), "usHistory");
+  assert.equal(testSupport.workerCapabilityForPath("/v1/fx"), "fx");
+});
+
 test("on-demand history requests use a five-calendar-year UTC range", () => {
   assert.deepEqual(
     testSupport.fiveYearRange(new Date("2026-07-21T12:00:00Z")),
     { start: "2021-07-21", end: "2026-07-21" },
   );
+});
+
+test("typed ticker matching is case-insensitive and ranks exact ticker before names", () => {
+  const assets = [
+    { id: "stock-nvda", ticker: "NVDA", name: "NVIDIA", exchange: "NASDAQ" },
+    { id: "stock-nvdl", ticker: "NVDL", name: "GraniteShares NVIDIA 2x", exchange: "NASDAQ" },
+    { id: "stock-aapl", ticker: "AAPL", name: "Apple", exchange: "NASDAQ" },
+  ];
+  assert.equal(testSupport.normalizeTickerQuery("  nvda "), "NVDA");
+  assert.equal(testSupport.normalizeTickerQuery("brk.b"), "BRK-B");
+  assert.equal(testSupport.normalizeTickerQuery("005930.KS"), "005930.KS");
+  assert.equal(testSupport.exactCatalogAsset(assets, "nvda")?.id, "stock-nvda");
+  assert.deepEqual(
+    testSupport.matchingCatalogAssets(assets, "nvd").map((asset) => asset.ticker),
+    ["NVDA", "NVDL"],
+  );
+  assert.deepEqual(
+    testSupport.matchingCatalogAssets(assets, "nvidia").map((asset) => asset.ticker),
+    ["NVDA", "NVDL"],
+  );
+});
+
+test("typed Enter resolves exact tickers before names and never substitutes a ticker prefix", async () => {
+  const assets = [
+    { id: "stock-googl", ticker: "GOOGL", name: "Alphabet (Google) Class A", exchange: "NASDAQ" },
+    { id: "stock-nvda", ticker: "NVDA", name: "NVIDIA Corporation", exchange: "NASDAQ" },
+  ];
+  assert.equal(
+    await testSupport.resolveTickerCommitAsset("GOOG", assets, { workerConfigured: false }),
+    null,
+  );
+  assert.equal(
+    (await testSupport.resolveTickerCommitAsset("NVIDIA", assets, { workerConfigured: false }))?.ticker,
+    "NVDA",
+  );
+
+  let remoteQuery = null;
+  const remoteExact = await testSupport.resolveTickerCommitAsset("GOOG", assets, {
+    workerConfigured: true,
+    searchRemote: async (query) => {
+      remoteQuery = query;
+      return [{ id: "stock-goog", ticker: "GOOG", name: "Alphabet Class C", exchange: "NASDAQ" }];
+    },
+    createLiveEntry: () => { throw new Error("exact remote result must win"); },
+  });
+  assert.equal(remoteQuery, "GOOG");
+  assert.equal(remoteExact?.ticker, "GOOG");
+
+  const boundedLive = await testSupport.resolveTickerCommitAsset("GOOG", assets, {
+    workerConfigured: true,
+    searchRemote: async () => [],
+    createLiveEntry: (ticker) => ({ id: `live-${ticker}`, ticker }),
+  });
+  assert.equal(boundedLive?.ticker, "GOOG");
+});
+
+test("typed ticker combobox supports arrow navigation and Enter selection", async () => {
+  document.body.innerHTML = `
+    <input id="ticker-test" role="combobox" aria-controls="ticker-test-options" aria-expanded="false">
+    <div id="ticker-test-options" role="listbox" hidden></div>`;
+  const input = document.querySelector("#ticker-test");
+  const list = document.querySelector("#ticker-test-options");
+  const assets = [
+    { id: "stock-nvda", ticker: "NVDA", name: "NVIDIA", exchange: "NASDAQ", type: "equity", status: "published" },
+    { id: "stock-nvdl", ticker: "NVDL", name: "NVIDIA 2x", exchange: "NASDAQ", type: "etf", status: "published" },
+  ];
+  let selected = null;
+  testSupport.configureTickerCombobox(input, list, { assets: () => assets, onSelect: (entry) => { selected = entry; } });
+  input.value = "nvd";
+  input.dispatchEvent(new window.Event("input", { bubbles: true }));
+  assert.equal(input.getAttribute("aria-expanded"), "true");
+  assert.equal(list.querySelectorAll('[role="option"]').length, 2);
+  input.dispatchEvent(new window.KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
+  assert.match(input.getAttribute("aria-activedescendant"), /option-0$/);
+  input.dispatchEvent(new window.KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+  await Promise.resolve();
+  assert.equal(selected?.id, "stock-nvda");
+  assert.equal(input.value, "NVDA");
+  assert.equal(input.dataset.assetId, "stock-nvda");
+  assert.equal(input.getAttribute("aria-expanded"), "false");
+  assert.equal(list.hidden, true);
+});
+
+test("typed ticker Enter accepts the first visible suggestion without an arrow key", async () => {
+  document.body.innerHTML = `
+    <input id="ticker-first" role="combobox" aria-controls="ticker-first-options" aria-expanded="false">
+    <div id="ticker-first-options" role="listbox" hidden></div>`;
+  const input = document.querySelector("#ticker-first");
+  const list = document.querySelector("#ticker-first-options");
+  const assets = [
+    { id: "stock-nvda", ticker: "NVDA", name: "NVIDIA Corporation", exchange: "NASDAQ", type: "equity", status: "published" },
+    { id: "stock-nvdl", ticker: "NVDL", name: "NVIDIA 2x", exchange: "NASDAQ", type: "etf", status: "published" },
+  ];
+  let selected = null;
+  testSupport.configureTickerCombobox(input, list, { assets: () => assets, onSelect: (entry) => { selected = entry; } });
+  input.value = "nvidia";
+  input.dispatchEvent(new window.Event("input", { bubbles: true }));
+  input.dispatchEvent(new window.KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+  await Promise.resolve();
+  assert.equal(selected?.id, "stock-nvda");
+  assert.equal(input.value, "NVDA");
+});
+
+test("typed ticker Enter leaves an unmatched ticker prefix invalid", async () => {
+  document.body.innerHTML = `
+    <input id="ticker-prefix" role="combobox" aria-controls="ticker-prefix-options" aria-expanded="false">
+    <div id="ticker-prefix-options" role="listbox" hidden></div>`;
+  const input = document.querySelector("#ticker-prefix");
+  const list = document.querySelector("#ticker-prefix-options");
+  const assets = [
+    { id: "stock-googl", ticker: "GOOGL", name: "Alphabet (Google) Class A", exchange: "NASDAQ", type: "equity", status: "published" },
+  ];
+  let selected = null;
+  let invalid = null;
+  testSupport.configureTickerCombobox(input, list, {
+    assets: () => assets,
+    onSelect: (entry) => { selected = entry; },
+    onInvalid: (query) => { invalid = query; },
+  });
+  input.value = "GOOG";
+  input.dispatchEvent(new window.Event("input", { bubbles: true }));
+  input.dispatchEvent(new window.KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+  await Promise.resolve();
+  await Promise.resolve();
+  assert.equal(selected, null);
+  assert.equal(invalid, "GOOG");
+  assert.equal(input.value, "GOOG");
+  assert.notEqual(input.validationMessage, "");
+});
+
+test("optional dynamic catalog extends core tickers without replacing the validated core", () => {
+  const core = [{ id: "stock-nvda", ticker: "NVDA", name: "NVIDIA", status: "published" }];
+  const dynamic = [
+    { id: "dynamic-us-nvda", ticker: "NVDA", name: "Duplicate NVIDIA", status: "published" },
+    { id: "dynamic-us-cost", ticker: "COST", name: "Costco", status: "published", dataPath: "dynamic-assets/dynamic-us-cost.json" },
+  ];
+  const merged = testSupport.mergeCatalogLayers(core, dynamic);
+  assert.equal(merged.length, 2);
+  assert.equal(merged[0].name, "NVIDIA");
+  assert.equal(merged[1].ticker, "COST");
+  assert.equal(testSupport.assetPath(merged[1]), "./data/dynamic-assets/dynamic-us-cost.json");
+  assert.equal(testSupport.assetPath({ id: "stock-nvda", dataPath: "assets/stock-nvda.json" }), "./data/assets/stock-nvda.json");
 });
 
 test("published static generations take precedence while unavailable can fall back", () => {

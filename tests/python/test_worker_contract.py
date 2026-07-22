@@ -36,4 +36,7 @@ process.stdout.write(JSON.stringify(document));
     )
     assert errors == []
     assert document["metadata"][0]["returnBasis"] == "total_return_approximation"
-    assert document["source"]["priceField"] == "close"
+    assert document["metadata"][0]["priceField"] == "adjusted_close"
+    assert document["source"]["provider"] == "yahoo_finance"
+    assert document["source"]["priceField"] == "adjusted_close"
+    assert document["source"]["priceFieldBySymbol"] == {"NVDA": "adjusted_close"}

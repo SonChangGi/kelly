@@ -44,7 +44,23 @@
           "enum": ["price_return", "total_return_approximation", "fx_rate"]
         },
         "baseCurrency": { "type": "string", "pattern": "^[A-Z]{3}$" },
-        "quoteCurrency": { "type": "string", "pattern": "^[A-Z]{3}$" }
+        "quoteCurrency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+        "catalogScope": { "type": "string", "enum": ["core", "dynamic"] },
+        "providerSymbol": { "type": "string", "minLength": 1, "maxLength": 24 },
+        "providerExchangeCode": { "type": "string", "minLength": 1, "maxLength": 24 },
+        "instrumentType": { "type": "string", "enum": ["EQUITY", "ETF"] },
+        "displayName": {
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "null" }
+          ]
+        },
+        "firstTradeDate": {
+          "oneOf": [
+            { "type": "string", "format": "date" },
+            { "type": "null" }
+          ]
+        }
       }
     },
     "dates": {
@@ -122,6 +138,31 @@
             },
             "p99AbsReturnDifference": {
               "oneOf": [{ "type": "number", "minimum": 0 }, { "type": "null" }]
+            },
+            "attempts": {
+              "type": "array",
+              "maxItems": 2,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["provider", "state", "reasonCode"],
+                "properties": {
+                  "provider": { "type": "string", "enum": ["stooq", "finviz"] },
+                  "state": {
+                    "type": "string",
+                    "enum": ["passed", "unavailable", "insufficient", "mismatch"]
+                  },
+                  "reasonCode": {
+                    "oneOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^[a-z0-9][a-z0-9_-]{0,119}$"
+                      },
+                      { "type": "null" }
+                    ]
+                  }
+                }
+              }
             }
           }
         }

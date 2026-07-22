@@ -1,0 +1,93 @@
+name: Refresh expanded US universe
+
+on:
+  schedule:
+    # Friday 22:30 New York during daylight time / Saturday 11:30 Seoul.
+    - cron: "30 2 * * 6"
+  workflow_dispatch:
+    inputs:
+      count:
+        description: "Target number of non-core US tickers (1-500)"
+        required: false
+        default: "250"
+        type: string
+      backfill:
+        description: "Replace complete histories after reviewing a drift alert"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-expanded-us
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --frozen
+      - name: Collect the key-free expanded US cache
+        env:
+          REQUESTED_COUNT: ${{ inputs.count || '250' }}
+          EXPANDED_BACKFILL: ${{ inputs.backfill || 'false' }}
+          YAHOO_PUBLIC_DISPLAY_APPROVED: ${{ vars.YAHOO_PUBLIC_DISPLAY_APPROVED || 'false' }}
+        run: |
+          if ! [[ "$REQUESTED_COUNT" =~ ^[0-9]+$ ]] || (( REQUESTED_COUNT < 1 || REQUESTED_COUNT > 500 )); then
+            echo "Invalid expanded-universe count: $REQUESTED_COUNT" >&2
+            exit 2
+          fi
+          if [[ "$YAHOO_PUBLIC_DISPLAY_APPROVED" != "true" ]]; then
+            echo "Expanded Yahoo-derived publication requires repository variable YAHOO_PUBLIC_DISPLAY_APPROVED=true." >&2
+            exit 2
+          fi
+          refresh_args=(
+            --universe auto
+            --count "$REQUESTED_COUNT"
+            --cache-scope public
+          )
+          if [[ "$EXPANDED_BACKFILL" == "true" ]]; then
+            refresh_args+=(--backfill)
+          fi
+          uv run kelly-lab fetch-us-batch "${refresh_args[@]}"
+      - name: Enforce coverage and validate every public contract
+        env:
+          REQUESTED_COUNT: ${{ inputs.count || '250' }}
+        run: |
+          published_count="$(jq -r '.assetCount' data/dynamic-catalog.json)"
+          preserved_count="$(jq -r '.preservedCount' data/dynamic-catalog.json)"
+          fresh_count="$(jq -r '.freshCount' data/dynamic-catalog.json)"
+          if (( fresh_count + preserved_count != published_count )); then
+            echo "Expanded manifest fresh/preserved counts are inconsistent." >&2
+            exit 1
+          fi
+          minimum_count="$(( (REQUESTED_COUNT * 9 + 9) / 10 ))"
+          if (( published_count < minimum_count )); then
+            echo "Expanded universe coverage ${published_count}/${REQUESTED_COUNT} is below 90%." >&2
+            exit 1
+          fi
+          if (( fresh_count < minimum_count )); then
+            echo "Fresh expanded coverage ${fresh_count}/${REQUESTED_COUNT} is below 90%; preserving the prior public generation." >&2
+            exit 1
+          fi
+          oldest_date="$(jq -r '[.assets[].dataAsOf] | min' data/dynamic-catalog.json)"
+          freshness_cutoff="$(date -u -d '10 days ago' +%F)"
+          if [[ "$oldest_date" < "$freshness_cutoff" ]]; then
+            echo "Expanded universe contains data older than ${freshness_cutoff}: ${oldest_date}." >&2
+            exit 1
+          fi
+          uv run python -m kelly_lab.verify
+      - name: Commit validated expanded artifacts
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/dynamic-catalog.json data/dynamic-assets
+          git diff --cached --quiet || git commit -m "data: refresh expanded US universe"
+          git push
