@@ -1,18 +1,22 @@
 {
   "schemaVersion": 1,
   "contract": "kelly-asset-catalog",
-  "state": "unavailable",
-  "catalogVersion": "2026-07-21-v3",
-  "generatedAt": "2026-07-21T14:27:11.713144+00:00",
+  "state": "degraded",
+  "catalogVersion": "2026-07-22-v4",
+  "generatedAt": "2026-07-22T00:00:33.145754+00:00",
   "assetCount": 50,
   "providerPolicy": {
     "providers": [
       "krx",
-      "twelve_data"
+      "yahoo_finance",
+      "finance_data_reader",
+      "stooq",
+      "fred",
+      "finviz"
     ],
     "normalizedOnly": true,
     "rawRedistribution": false,
-    "rightsRequired": true
+    "rightsRequired": false
   },
   "assets": [
     {
@@ -74,10 +78,10 @@
       "exchange": "INDEX",
       "currency": "USD",
       "timezone": "America/New_York",
-      "status": "unavailable",
+      "status": "published",
       "provider": {
-        "provider": "twelve_data",
-        "symbol": "SPX",
+        "provider": "yahoo_finance",
+        "symbol": "^GSPC",
         "exchange": "INDEX"
       },
       "leveragedProducts": {
@@ -91,8 +95,8 @@
       ],
       "dataPath": "assets/index-gspc.json",
       "returnBasis": "price_return",
-      "availableFrom": null,
-      "availableTo": null
+      "availableFrom": "2021-07-22",
+      "availableTo": "2026-07-21"
     },
     {
       "id": "index-ndx",
@@ -103,10 +107,10 @@
       "exchange": "INDEX",
       "currency": "USD",
       "timezone": "America/New_York",
-      "status": "unavailable",
+      "status": "published",
       "provider": {
-        "provider": "twelve_data",
-        "symbol": "NDX",
+        "provider": "yahoo_finance",
+        "symbol": "^NDX",
         "exchange": "INDEX"
       },
       "leveragedProducts": {
@@ -120,8 +124,8 @@
       ],
       "dataPath": "assets/index-ndx.json",
       "returnBasis": "price_return",
-      "availableFrom": null,
-      "availableTo": null
+      "availableFrom": "2021-07-22",
+      "availableTo": "2026-07-21"
     },
     {
       "id": "index-sox",
@@ -132,10 +136,10 @@
       "exchange": "INDEX",
       "currency": "USD",
       "timezone": "America/New_York",
-      "status": "unavailable",
+      "status": "published",
       "provider": {
-        "provider": "twelve_data",
-        "symbol": "SOX",
+        "provider": "yahoo_finance",
+        "symbol": "^SOX",
         "exchange": "INDEX"
       },
       "searchTerms": [
@@ -145,8 +149,8 @@
       ],
       "dataPath": "assets/index-sox.json",
       "returnBasis": "price_return",
-      "availableFrom": null,
-      "availableTo": null
+      "availableFrom": "2021-07-22",
+      "availableTo": "2026-07-21"
     },
     {
       "id": "stock-aapl",
@@ -157,9 +161,9 @@
       "exchange": "NASDAQ",
       "currency": "USD",
       "timezone": "America/New_York",
-      "status": "unavailable",
+      "status": "published",
       "provider": {
-        "provider": "twelve_data",
+        "provider": "yahoo_finance",
         "symbol": "AAPL",
         "exchange": "NASDAQ"
       },
@@ -170,8 +174,8 @@
       ],
       "dataPath": "assets/stock-aapl.json",
       "returnBasis": "total_return_approximation",
-      "availableFrom": null,
-      "availableTo": null
+      "availableFrom": "2021-07-22",
+      "availableTo": "2026-07-21"
     },
     {
       "id": "stock-msft",
@@ -182,9 +186,9 @@
       "exchange": "NASDAQ",
       "currency": "USD",
       "timezone": "America/New_York",
-      "status": "unavailable",
+      "status": "published",
       "provider": {
-        "provider": "twelve_data",
+        "provider": "yahoo_finance",
         "symbol": "MSFT",
         "exchange": "NASDAQ"
       },
@@ -195,8 +199,8 @@
       ],
       "dataPath": "assets/stock-msft.json",
       "returnBasis": "total_return_approximation",
-      "availableFrom": null,
-      "availableTo": null
+      "availableFrom": "2021-07-22",
+      "availableTo": "2026-07-21"
     },
     {
       "id": "stock-nvda",
@@ -207,9 +211,9 @@
       "exchange": "NASDAQ",
       "currency": "USD",
       "timezone": "America/New_York",
-      "status": "unavailable",
+      "status": "published",
       "provider": {
-        "provider": "twelve_data",
+        "provider": "yahoo_finance",
         "symbol": "NVDA",
         "exchange": "NASDAQ"
       },
@@ -220,8 +224,8 @@
       ],
       "dataPath": "assets/stock-nvda.json",
       "returnBasis": "total_return_approximation",
-      "availableFrom": null,
-      "availableTo": null
+      "availableFrom": "2021-07-22",
+      "availableTo": "2026-07-21"
     },
     {
       "id": "stock-amzn",
@@ -232,9 +236,9 @@
       "exchange": "NASDAQ",
       "currency": "USD",
       "timezone": "America/New_York",
-      "status": "unavailable",
+      "status": "published",
       "provider": {
-        "provider": "twelve_data",
+        "provider": "yahoo_finance",
         "symbol": "AMZN",
         "exchange": "NASDAQ"
       },
@@ -245,8 +249,8 @@
       ],
       "dataPath": "assets/stock-amzn.json",
       "returnBasis": "total_return_approximation",
-      "availableFrom": null,
-      "availableTo": null
+      "availableFrom": "2021-07-22",
+      "availableTo": "2026-07-21"
     },
     {
       "id": "stock-googl",
@@ -257,9 +261,9 @@
       "exchange": "NASDAQ",
       "currency": "USD",
       "timezone": "America/New_York",
-      "status": "unavailable",
+      "status": "published",
       "provider": {
-        "provider": "twelve_data",
+        "provider": "yahoo_finance",
         "symbol": "GOOGL",
         "exchange": "NASDAQ"
       },
@@ -270,8 +274,8 @@
       ],
       "dataPath": "assets/stock-googl.json",
       "returnBasis": "total_return_approximation",
-      "availableFrom": null,
-      "availableTo": null
+      "availableFrom": "2021-07-22",
+      "availableTo": "2026-07-21"
     },
     {
       "id": "stock-meta",
@@ -282,9 +286,9 @@
       "exchange": "NASDAQ",
       "currency": "USD",
       "timezone": "America/New_York",
-      "status": "unavailable",
+      "status": "published",
       "provider": {
-        "provider": "twelve_data",
+        "provider": "yahoo_finance",
         "symbol": "META",
         "exchange": "NASDAQ"
       },
@@ -295,8 +299,8 @@
       ],
       "dataPath": "assets/stock-meta.json",
       "returnBasis": "total_return_approximation",
-      "availableFrom": null,
-      "availableTo": null
+      "availableFrom": "2021-07-22",
+      "availableTo": "2026-07-21"
     },
     {
       "id": "stock-tsla",
@@ -307,9 +311,9 @@
       "exchange": "NASDAQ",
       "currency": "USD",
       "timezone": "America/New_York",
-      "status": "unavailable",
+      "status": "published",
       "provider": {
-        "provider": "twelve_data",
+        "provider": "yahoo_finance",
         "symbol": "TSLA",
         "exchange": "NASDAQ"
       },
@@ -320,8 +324,8 @@
       ],
       "dataPath": "assets/stock-tsla.json",
       "returnBasis": "total_return_approximation",
-      "availableFrom": null,
-      "availableTo": null
+      "availableFrom": "2021-07-22",
+      "availableTo": "2026-07-21"
     },
     {
       "id": "stock-orcl",
@@ -332,9 +336,9 @@
       "exchange": "NYSE",
       "currency": "USD",
       "timezone": "America/New_York",
-      "status": "unavailable",
+      "status": "published",
       "provider": {
-        "provider": "twelve_data",
+        "provider": "yahoo_finance",
         "symbol": "ORCL",
         "exchange": "NYSE"
       },
@@ -345,8 +349,8 @@
       ],
       "dataPath": "assets/stock-orcl.json",
       "returnBasis": "total_return_approximation",
-      "availableFrom": null,
-      "availableTo": null
+      "availableFrom": "2021-07-22",
+      "availableTo": "2026-07-21"
     },
     {
       "id": "stock-crm",
@@ -357,9 +361,9 @@
       "exchange": "NYSE",
       "currency": "USD",
       "timezone": "America/New_York",
-      "status": "unavailable",
+      "status": "published",
       "provider": {
-        "provider": "twelve_data",
+        "provider": "yahoo_finance",
         "symbol": "CRM",
         "exchange": "NYSE"
       },
@@ -370,8 +374,8 @@
       ],
       "dataPath": "assets/stock-crm.json",
       "returnBasis": "total_return_approximation",
-      "availableFrom": null,
-      "availableTo": null
+      "availableFrom": "2021-07-22",
+      "availableTo": "2026-07-21"
     },
     {
       "id": "stock-nflx",
@@ -382,9 +386,9 @@
       "exchange": "NASDAQ",
       "currency": "USD",
       "timezone": "America/New_York",
-      "status": "unavailable",
+      "status": "published",
       "provider": {
-        "provider": "twelve_data",
+        "provider": "yahoo_finance",
         "symbol": "NFLX",
         "exchange": "NASDAQ"
       },
@@ -395,31 +399,34 @@
       ],
       "dataPath": "assets/stock-nflx.json",
       "returnBasis": "total_return_approximation",
-      "availableFrom": null,
-      "availableTo": null
+      "availableFrom": "2021-07-22",
+      "availableTo": "2026-07-21"
     },
     {
       "id": "stock-spcx",
       "symbol": "SPCX",
-      "name": "SPCX",
-      "nameKo": "SPCX",
+      "name": "Space Exploration Technologies Corp. Class A",
+      "nameKo": "스페이스X Class A",
       "assetType": "equity",
-      "exchange": "US",
+      "exchange": "NASDAQ",
       "currency": "USD",
       "timezone": "America/New_York",
-      "status": "unavailable",
+      "status": "published",
       "provider": {
-        "provider": "twelve_data",
+        "provider": "yahoo_finance",
         "symbol": "SPCX",
-        "exchange": "US"
+        "exchange": "NASDAQ"
       },
       "searchTerms": [
-        "SPCX"
+        "SPCX",
+        "SpaceX",
+        "스페이스X"
       ],
       "dataPath": "assets/stock-spcx.json",
       "returnBasis": "total_return_approximation",
-      "availableFrom": null,
-      "availableTo": null
+      "seriesStartFloor": "2026-06-12",
+      "availableFrom": "2026-06-12",
+      "availableTo": "2026-07-21"
     },
     {
       "id": "stock-avgo",
@@ -430,9 +437,9 @@
       "exchange": "NASDAQ",
       "currency": "USD",
       "timezone": "America/New_York",
-      "status": "unavailable",
+      "status": "published",
       "provider": {
-        "provider": "twelve_data",
+        "provider": "yahoo_finance",
         "symbol": "AVGO",
         "exchange": "NASDAQ"
       },
@@ -443,8 +450,8 @@
       ],
       "dataPath": "assets/stock-avgo.json",
       "returnBasis": "total_return_approximation",
-      "availableFrom": null,
-      "availableTo": null
+      "availableFrom": "2021-07-22",
+      "availableTo": "2026-07-21"
     },
     {
       "id": "stock-tsm",
@@ -455,9 +462,9 @@
       "exchange": "NYSE",
       "currency": "USD",
       "timezone": "America/New_York",
-      "status": "unavailable",
+      "status": "published",
       "provider": {
-        "provider": "twelve_data",
+        "provider": "yahoo_finance",
         "symbol": "TSM",
         "exchange": "NYSE"
       },
@@ -468,8 +475,8 @@
       ],
       "dataPath": "assets/stock-tsm.json",
       "returnBasis": "total_return_approximation",
-      "availableFrom": null,
-      "availableTo": null
+      "availableFrom": "2021-07-22",
+      "availableTo": "2026-07-21"
     },
     {
       "id": "stock-amd",
@@ -480,9 +487,9 @@
       "exchange": "NASDAQ",
       "currency": "USD",
       "timezone": "America/New_York",
-      "status": "unavailable",
+      "status": "published",
       "provider": {
-        "provider": "twelve_data",
+        "provider": "yahoo_finance",
         "symbol": "AMD",
         "exchange": "NASDAQ"
       },
@@ -492,8 +499,8 @@
       ],
       "dataPath": "assets/stock-amd.json",
       "returnBasis": "total_return_approximation",
-      "availableFrom": null,
-      "availableTo": null
+      "availableFrom": "2021-07-22",
+      "availableTo": "2026-07-21"
     },
     {
       "id": "stock-asml",
@@ -504,9 +511,9 @@
       "exchange": "NASDAQ",
       "currency": "USD",
       "timezone": "America/New_York",
-      "status": "unavailable",
+      "status": "published",
       "provider": {
-        "provider": "twelve_data",
+        "provider": "yahoo_finance",
         "symbol": "ASML",
         "exchange": "NASDAQ"
       },
@@ -516,8 +523,8 @@
       ],
       "dataPath": "assets/stock-asml.json",
       "returnBasis": "total_return_approximation",
-      "availableFrom": null,
-      "availableTo": null
+      "availableFrom": "2021-07-22",
+      "availableTo": "2026-07-21"
     },
     {
       "id": "stock-mu",
@@ -528,9 +535,9 @@
       "exchange": "NASDAQ",
       "currency": "USD",
       "timezone": "America/New_York",
-      "status": "unavailable",
+      "status": "published",
       "provider": {
-        "provider": "twelve_data",
+        "provider": "yahoo_finance",
         "symbol": "MU",
         "exchange": "NASDAQ"
       },
@@ -541,8 +548,8 @@
       ],
       "dataPath": "assets/stock-mu.json",
       "returnBasis": "total_return_approximation",
-      "availableFrom": null,
-      "availableTo": null
+      "availableFrom": "2021-07-22",
+      "availableTo": "2026-07-21"
     },
     {
       "id": "stock-qcom",
@@ -553,9 +560,9 @@
       "exchange": "NASDAQ",
       "currency": "USD",
       "timezone": "America/New_York",
-      "status": "unavailable",
+      "status": "published",
       "provider": {
-        "provider": "twelve_data",
+        "provider": "yahoo_finance",
         "symbol": "QCOM",
         "exchange": "NASDAQ"
       },
@@ -566,8 +573,8 @@
       ],
       "dataPath": "assets/stock-qcom.json",
       "returnBasis": "total_return_approximation",
-      "availableFrom": null,
-      "availableTo": null
+      "availableFrom": "2021-07-22",
+      "availableTo": "2026-07-21"
     },
     {
       "id": "stock-txn",
@@ -578,9 +585,9 @@
       "exchange": "NASDAQ",
       "currency": "USD",
       "timezone": "America/New_York",
-      "status": "unavailable",
+      "status": "published",
       "provider": {
-        "provider": "twelve_data",
+        "provider": "yahoo_finance",
         "symbol": "TXN",
         "exchange": "NASDAQ"
       },
@@ -591,8 +598,8 @@
       ],
       "dataPath": "assets/stock-txn.json",
       "returnBasis": "total_return_approximation",
-      "availableFrom": null,
-      "availableTo": null
+      "availableFrom": "2021-07-22",
+      "availableTo": "2026-07-21"
     },
     {
       "id": "stock-adi",
@@ -603,9 +610,9 @@
       "exchange": "NASDAQ",
       "currency": "USD",
       "timezone": "America/New_York",
-      "status": "unavailable",
+      "status": "published",
       "provider": {
-        "provider": "twelve_data",
+        "provider": "yahoo_finance",
         "symbol": "ADI",
         "exchange": "NASDAQ"
       },
@@ -616,8 +623,8 @@
       ],
       "dataPath": "assets/stock-adi.json",
       "returnBasis": "total_return_approximation",
-      "availableFrom": null,
-      "availableTo": null
+      "availableFrom": "2021-07-22",
+      "availableTo": "2026-07-21"
     },
     {
       "id": "stock-arm",
@@ -628,9 +635,9 @@
       "exchange": "NASDAQ",
       "currency": "USD",
       "timezone": "America/New_York",
-      "status": "unavailable",
+      "status": "published",
       "provider": {
-        "provider": "twelve_data",
+        "provider": "yahoo_finance",
         "symbol": "ARM",
         "exchange": "NASDAQ"
       },
@@ -641,8 +648,9 @@
       ],
       "dataPath": "assets/stock-arm.json",
       "returnBasis": "total_return_approximation",
-      "availableFrom": null,
-      "availableTo": null
+      "seriesStartFloor": "2023-09-14",
+      "availableFrom": "2023-09-14",
+      "availableTo": "2026-07-21"
     },
     {
       "id": "stock-mrvl",
@@ -653,9 +661,9 @@
       "exchange": "NASDAQ",
       "currency": "USD",
       "timezone": "America/New_York",
-      "status": "unavailable",
+      "status": "published",
       "provider": {
-        "provider": "twelve_data",
+        "provider": "yahoo_finance",
         "symbol": "MRVL",
         "exchange": "NASDAQ"
       },
@@ -666,8 +674,8 @@
       ],
       "dataPath": "assets/stock-mrvl.json",
       "returnBasis": "total_return_approximation",
-      "availableFrom": null,
-      "availableTo": null
+      "availableFrom": "2021-07-22",
+      "availableTo": "2026-07-21"
     },
     {
       "id": "stock-mchp",
@@ -678,9 +686,9 @@
       "exchange": "NASDAQ",
       "currency": "USD",
       "timezone": "America/New_York",
-      "status": "unavailable",
+      "status": "published",
       "provider": {
-        "provider": "twelve_data",
+        "provider": "yahoo_finance",
         "symbol": "MCHP",
         "exchange": "NASDAQ"
       },
@@ -691,8 +699,8 @@
       ],
       "dataPath": "assets/stock-mchp.json",
       "returnBasis": "total_return_approximation",
-      "availableFrom": null,
-      "availableTo": null
+      "availableFrom": "2021-07-22",
+      "availableTo": "2026-07-21"
     },
     {
       "id": "stock-amat",
@@ -703,9 +711,9 @@
       "exchange": "NASDAQ",
       "currency": "USD",
       "timezone": "America/New_York",
-      "status": "unavailable",
+      "status": "published",
       "provider": {
-        "provider": "twelve_data",
+        "provider": "yahoo_finance",
         "symbol": "AMAT",
         "exchange": "NASDAQ"
       },
@@ -716,8 +724,8 @@
       ],
       "dataPath": "assets/stock-amat.json",
       "returnBasis": "total_return_approximation",
-      "availableFrom": null,
-      "availableTo": null
+      "availableFrom": "2021-07-22",
+      "availableTo": "2026-07-21"
     },
     {
       "id": "stock-lrcx",
@@ -728,9 +736,9 @@
       "exchange": "NASDAQ",
       "currency": "USD",
       "timezone": "America/New_York",
-      "status": "unavailable",
+      "status": "published",
       "provider": {
-        "provider": "twelve_data",
+        "provider": "yahoo_finance",
         "symbol": "LRCX",
         "exchange": "NASDAQ"
       },
@@ -741,8 +749,8 @@
       ],
       "dataPath": "assets/stock-lrcx.json",
       "returnBasis": "total_return_approximation",
-      "availableFrom": null,
-      "availableTo": null
+      "availableFrom": "2021-07-22",
+      "availableTo": "2026-07-21"
     },
     {
       "id": "stock-klac",
@@ -753,9 +761,9 @@
       "exchange": "NASDAQ",
       "currency": "USD",
       "timezone": "America/New_York",
-      "status": "unavailable",
+      "status": "published",
       "provider": {
-        "provider": "twelve_data",
+        "provider": "yahoo_finance",
         "symbol": "KLAC",
         "exchange": "NASDAQ"
       },
@@ -765,8 +773,8 @@
       ],
       "dataPath": "assets/stock-klac.json",
       "returnBasis": "total_return_approximation",
-      "availableFrom": null,
-      "availableTo": null
+      "availableFrom": "2021-07-22",
+      "availableTo": "2026-07-21"
     },
     {
       "id": "stock-ter",
@@ -777,9 +785,9 @@
       "exchange": "NASDAQ",
       "currency": "USD",
       "timezone": "America/New_York",
-      "status": "unavailable",
+      "status": "published",
       "provider": {
-        "provider": "twelve_data",
+        "provider": "yahoo_finance",
         "symbol": "TER",
         "exchange": "NASDAQ"
       },
@@ -790,8 +798,8 @@
       ],
       "dataPath": "assets/stock-ter.json",
       "returnBasis": "total_return_approximation",
-      "availableFrom": null,
-      "availableTo": null
+      "availableFrom": "2021-07-22",
+      "availableTo": "2026-07-21"
     },
     {
       "id": "stock-lite",
@@ -802,9 +810,9 @@
       "exchange": "NASDAQ",
       "currency": "USD",
       "timezone": "America/New_York",
-      "status": "unavailable",
+      "status": "published",
       "provider": {
-        "provider": "twelve_data",
+        "provider": "yahoo_finance",
         "symbol": "LITE",
         "exchange": "NASDAQ"
       },
@@ -815,8 +823,8 @@
       ],
       "dataPath": "assets/stock-lite.json",
       "returnBasis": "total_return_approximation",
-      "availableFrom": null,
-      "availableTo": null
+      "availableFrom": "2021-07-22",
+      "availableTo": "2026-07-21"
     },
     {
       "id": "stock-wdc",
@@ -827,9 +835,9 @@
       "exchange": "NASDAQ",
       "currency": "USD",
       "timezone": "America/New_York",
-      "status": "unavailable",
+      "status": "published",
       "provider": {
-        "provider": "twelve_data",
+        "provider": "yahoo_finance",
         "symbol": "WDC",
         "exchange": "NASDAQ"
       },
@@ -840,8 +848,8 @@
       ],
       "dataPath": "assets/stock-wdc.json",
       "returnBasis": "total_return_approximation",
-      "availableFrom": null,
-      "availableTo": null
+      "availableFrom": "2021-07-22",
+      "availableTo": "2026-07-21"
     },
     {
       "id": "stock-sndk",
@@ -852,9 +860,9 @@
       "exchange": "NASDAQ",
       "currency": "USD",
       "timezone": "America/New_York",
-      "status": "unavailable",
+      "status": "published",
       "provider": {
-        "provider": "twelve_data",
+        "provider": "yahoo_finance",
         "symbol": "SNDK",
         "exchange": "NASDAQ"
       },
@@ -865,8 +873,9 @@
       ],
       "dataPath": "assets/stock-sndk.json",
       "returnBasis": "total_return_approximation",
-      "availableFrom": null,
-      "availableTo": null
+      "seriesStartFloor": "2025-02-24",
+      "availableFrom": "2025-02-24",
+      "availableTo": "2026-07-21"
     },
     {
       "id": "stock-stx",
@@ -877,9 +886,9 @@
       "exchange": "NASDAQ",
       "currency": "USD",
       "timezone": "America/New_York",
-      "status": "unavailable",
+      "status": "published",
       "provider": {
-        "provider": "twelve_data",
+        "provider": "yahoo_finance",
         "symbol": "STX",
         "exchange": "NASDAQ"
       },
@@ -890,8 +899,8 @@
       ],
       "dataPath": "assets/stock-stx.json",
       "returnBasis": "total_return_approximation",
-      "availableFrom": null,
-      "availableTo": null
+      "availableFrom": "2021-07-22",
+      "availableTo": "2026-07-21"
     },
     {
       "id": "etf-spy",
@@ -902,9 +911,9 @@
       "exchange": "NYSE ARCA",
       "currency": "USD",
       "timezone": "America/New_York",
-      "status": "unavailable",
+      "status": "published",
       "provider": {
-        "provider": "twelve_data",
+        "provider": "yahoo_finance",
         "symbol": "SPY",
         "exchange": "NYSE ARCA"
       },
@@ -918,8 +927,8 @@
       ],
       "dataPath": "assets/etf-spy.json",
       "returnBasis": "total_return_approximation",
-      "availableFrom": null,
-      "availableTo": null
+      "availableFrom": "2021-07-22",
+      "availableTo": "2026-07-21"
     },
     {
       "id": "etf-qqq",
@@ -930,9 +939,9 @@
       "exchange": "NASDAQ",
       "currency": "USD",
       "timezone": "America/New_York",
-      "status": "unavailable",
+      "status": "published",
       "provider": {
-        "provider": "twelve_data",
+        "provider": "yahoo_finance",
         "symbol": "QQQ",
         "exchange": "NASDAQ"
       },
@@ -946,8 +955,8 @@
       ],
       "dataPath": "assets/etf-qqq.json",
       "returnBasis": "total_return_approximation",
-      "availableFrom": null,
-      "availableTo": null
+      "availableFrom": "2021-07-22",
+      "availableTo": "2026-07-21"
     },
     {
       "id": "etf-vti",
@@ -958,9 +967,9 @@
       "exchange": "NYSE ARCA",
       "currency": "USD",
       "timezone": "America/New_York",
-      "status": "unavailable",
+      "status": "published",
       "provider": {
-        "provider": "twelve_data",
+        "provider": "yahoo_finance",
         "symbol": "VTI",
         "exchange": "NYSE ARCA"
       },
@@ -970,8 +979,8 @@
       ],
       "dataPath": "assets/etf-vti.json",
       "returnBasis": "total_return_approximation",
-      "availableFrom": null,
-      "availableTo": null
+      "availableFrom": "2021-07-22",
+      "availableTo": "2026-07-21"
     },
     {
       "id": "etf-iwm",
@@ -982,9 +991,9 @@
       "exchange": "NYSE ARCA",
       "currency": "USD",
       "timezone": "America/New_York",
-      "status": "unavailable",
+      "status": "published",
       "provider": {
-        "provider": "twelve_data",
+        "provider": "yahoo_finance",
         "symbol": "IWM",
         "exchange": "NYSE ARCA"
       },
@@ -994,8 +1003,8 @@
       ],
       "dataPath": "assets/etf-iwm.json",
       "returnBasis": "total_return_approximation",
-      "availableFrom": null,
-      "availableTo": null
+      "availableFrom": "2021-07-22",
+      "availableTo": "2026-07-21"
     },
     {
       "id": "etf-smh",
@@ -1006,9 +1015,9 @@
       "exchange": "NASDAQ",
       "currency": "USD",
       "timezone": "America/New_York",
-      "status": "unavailable",
+      "status": "published",
       "provider": {
-        "provider": "twelve_data",
+        "provider": "yahoo_finance",
         "symbol": "SMH",
         "exchange": "NASDAQ"
       },
@@ -1018,8 +1027,8 @@
       ],
       "dataPath": "assets/etf-smh.json",
       "returnBasis": "total_return_approximation",
-      "availableFrom": null,
-      "availableTo": null
+      "availableFrom": "2021-07-22",
+      "availableTo": "2026-07-21"
     },
     {
       "id": "etf-soxx",
@@ -1030,9 +1039,9 @@
       "exchange": "NASDAQ",
       "currency": "USD",
       "timezone": "America/New_York",
-      "status": "unavailable",
+      "status": "published",
       "provider": {
-        "provider": "twelve_data",
+        "provider": "yahoo_finance",
         "symbol": "SOXX",
         "exchange": "NASDAQ"
       },
@@ -1042,8 +1051,8 @@
       ],
       "dataPath": "assets/etf-soxx.json",
       "returnBasis": "total_return_approximation",
-      "availableFrom": null,
-      "availableTo": null
+      "availableFrom": "2021-07-22",
+      "availableTo": "2026-07-21"
     },
     {
       "id": "etf-gld",
@@ -1054,9 +1063,9 @@
       "exchange": "NYSE ARCA",
       "currency": "USD",
       "timezone": "America/New_York",
-      "status": "unavailable",
+      "status": "published",
       "provider": {
-        "provider": "twelve_data",
+        "provider": "yahoo_finance",
         "symbol": "GLD",
         "exchange": "NYSE ARCA"
       },
@@ -1066,8 +1075,8 @@
       ],
       "dataPath": "assets/etf-gld.json",
       "returnBasis": "total_return_approximation",
-      "availableFrom": null,
-      "availableTo": null
+      "availableFrom": "2021-07-22",
+      "availableTo": "2026-07-21"
     },
     {
       "id": "etf-tlt",
@@ -1078,9 +1087,9 @@
       "exchange": "NASDAQ",
       "currency": "USD",
       "timezone": "America/New_York",
-      "status": "unavailable",
+      "status": "published",
       "provider": {
-        "provider": "twelve_data",
+        "provider": "yahoo_finance",
         "symbol": "TLT",
         "exchange": "NASDAQ"
       },
@@ -1090,8 +1099,8 @@
       ],
       "dataPath": "assets/etf-tlt.json",
       "returnBasis": "total_return_approximation",
-      "availableFrom": null,
-      "availableTo": null
+      "availableFrom": "2021-07-22",
+      "availableTo": "2026-07-21"
     },
     {
       "id": "etf-sso",
@@ -1102,9 +1111,9 @@
       "exchange": "NYSE ARCA",
       "currency": "USD",
       "timezone": "America/New_York",
-      "status": "unavailable",
+      "status": "published",
       "provider": {
-        "provider": "twelve_data",
+        "provider": "yahoo_finance",
         "symbol": "SSO",
         "exchange": "NYSE ARCA"
       },
@@ -1114,8 +1123,8 @@
       ],
       "dataPath": "assets/etf-sso.json",
       "returnBasis": "total_return_approximation",
-      "availableFrom": null,
-      "availableTo": null
+      "availableFrom": "2021-07-22",
+      "availableTo": "2026-07-21"
     },
     {
       "id": "etf-sds",
@@ -1126,9 +1135,9 @@
       "exchange": "NYSE ARCA",
       "currency": "USD",
       "timezone": "America/New_York",
-      "status": "unavailable",
+      "status": "published",
       "provider": {
-        "provider": "twelve_data",
+        "provider": "yahoo_finance",
         "symbol": "SDS",
         "exchange": "NYSE ARCA"
       },
@@ -1138,8 +1147,8 @@
       ],
       "dataPath": "assets/etf-sds.json",
       "returnBasis": "total_return_approximation",
-      "availableFrom": null,
-      "availableTo": null
+      "availableFrom": "2021-07-22",
+      "availableTo": "2026-07-21"
     },
     {
       "id": "etf-qld",
@@ -1150,9 +1159,9 @@
       "exchange": "NASDAQ",
       "currency": "USD",
       "timezone": "America/New_York",
-      "status": "unavailable",
+      "status": "published",
       "provider": {
-        "provider": "twelve_data",
+        "provider": "yahoo_finance",
         "symbol": "QLD",
         "exchange": "NASDAQ"
       },
@@ -1162,8 +1171,8 @@
       ],
       "dataPath": "assets/etf-qld.json",
       "returnBasis": "total_return_approximation",
-      "availableFrom": null,
-      "availableTo": null
+      "availableFrom": "2021-07-22",
+      "availableTo": "2026-07-21"
     },
     {
       "id": "etf-qid",
@@ -1174,9 +1183,9 @@
       "exchange": "NASDAQ",
       "currency": "USD",
       "timezone": "America/New_York",
-      "status": "unavailable",
+      "status": "published",
       "provider": {
-        "provider": "twelve_data",
+        "provider": "yahoo_finance",
         "symbol": "QID",
         "exchange": "NASDAQ"
       },
@@ -1186,8 +1195,8 @@
       ],
       "dataPath": "assets/etf-qid.json",
       "returnBasis": "total_return_approximation",
-      "availableFrom": null,
-      "availableTo": null
+      "availableFrom": "2021-07-22",
+      "availableTo": "2026-07-21"
     },
     {
       "id": "etf-usd",
@@ -1198,9 +1207,9 @@
       "exchange": "NYSE ARCA",
       "currency": "USD",
       "timezone": "America/New_York",
-      "status": "unavailable",
+      "status": "published",
       "provider": {
-        "provider": "twelve_data",
+        "provider": "yahoo_finance",
         "symbol": "USD",
         "exchange": "NYSE ARCA"
       },
@@ -1210,8 +1219,8 @@
       ],
       "dataPath": "assets/etf-usd.json",
       "returnBasis": "total_return_approximation",
-      "availableFrom": null,
-      "availableTo": null
+      "availableFrom": "2021-07-22",
+      "availableTo": "2026-07-21"
     },
     {
       "id": "etf-ssg",
@@ -1222,9 +1231,9 @@
       "exchange": "NYSE ARCA",
       "currency": "USD",
       "timezone": "America/New_York",
-      "status": "unavailable",
+      "status": "published",
       "provider": {
-        "provider": "twelve_data",
+        "provider": "yahoo_finance",
         "symbol": "SSG",
         "exchange": "NYSE ARCA"
       },
@@ -1234,8 +1243,8 @@
       ],
       "dataPath": "assets/etf-ssg.json",
       "returnBasis": "total_return_approximation",
-      "availableFrom": null,
-      "availableTo": null
+      "availableFrom": "2021-07-22",
+      "availableTo": "2026-07-21"
     },
     {
       "id": "fx-usd-krw",
@@ -1246,10 +1255,10 @@
       "exchange": "FX",
       "currency": "KRW",
       "timezone": "UTC",
-      "status": "unavailable",
+      "status": "published",
       "provider": {
-        "provider": "twelve_data",
-        "symbol": "USD/KRW",
+        "provider": "fred",
+        "symbol": "DEXKOUS",
         "exchange": "FX"
       },
       "searchTerms": [
@@ -1259,8 +1268,8 @@
       ],
       "dataPath": "assets/fx-usd-krw.json",
       "returnBasis": "fx_rate",
-      "availableFrom": null,
-      "availableTo": null
+      "availableFrom": "2021-07-22",
+      "availableTo": "2026-07-22"
     }
   ]
 }

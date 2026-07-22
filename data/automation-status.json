@@ -2,11 +2,11 @@
   "schemaVersion": 1,
   "contract": "kelly-automation-status",
   "projectId": "kelly",
-  "state": "unavailable",
-  "generatedAt": "2026-07-21T14:27:11.713144+00:00",
-  "dataAsOf": null,
-  "lastAttemptAt": "2026-07-21T14:27:11.713144+00:00",
-  "lastSuccessAt": null,
+  "state": "degraded",
+  "generatedAt": "2026-07-22T00:00:33.145754+00:00",
+  "dataAsOf": "2026-07-22",
+  "lastAttemptAt": "2026-07-22T00:00:33.145754+00:00",
+  "lastSuccessAt": "2026-07-21T23:45:29.343691+00:00",
   "schedule": "weekdays after source-market close",
   "provider": {
     "name": "mixed",
@@ -16,23 +16,43 @@
     "providers": [
       {
         "name": "krx",
+        "configured": false,
+        "rightsApproved": false
+      },
+      {
+        "name": "yahoo_finance",
         "configured": true,
         "rightsApproved": false
       },
       {
-        "name": "twelve_data",
-        "configured": false,
+        "name": "finance_data_reader",
+        "configured": true,
+        "rightsApproved": false
+      },
+      {
+        "name": "stooq",
+        "configured": true,
+        "rightsApproved": false
+      },
+      {
+        "name": "fred",
+        "configured": true,
+        "rightsApproved": false
+      },
+      {
+        "name": "finviz",
+        "configured": true,
         "rightsApproved": false
       }
     ]
   },
   "publication": {
     "target": "github_pages",
-    "latestPublishedAt": null,
-    "assetCount": 0
+    "latestPublishedAt": "2026-07-21T23:45:29.343691+00:00",
+    "assetCount": 48
   },
   "reasonCodes": [
-    "krx_public_display_rights_unconfirmed",
-    "twelve_data_rights_or_key_unavailable"
+    "krx_api_key_unavailable",
+    "krx_public_display_rights_unconfirmed"
   ]
 }

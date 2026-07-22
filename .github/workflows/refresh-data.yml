@@ -4,6 +4,24 @@ on:
   schedule:
     - cron: "30 23 * * 1-5"
   workflow_dispatch:
+    inputs:
+      backfill:
+        description: "Rebuild the selected histories instead of incrementally refreshing"
+        required: false
+        type: boolean
+        default: false
+      asset_ids:
+        description: "Optional comma-separated catalog IDs (for example stock-aapl,fx-usd-krw)"
+        required: false
+        type: string
+      start:
+        description: "Optional first date (YYYY-MM-DD)"
+        required: false
+        type: string
+      end:
+        description: "Optional last date (YYYY-MM-DD)"
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -14,31 +32,46 @@ concurrency:
 
 jobs:
   refresh:
-    if: vars.DATA_REFRESH_ENABLED == 'true'
     runs-on: ubuntu-latest
     env:
       KRX_API_KEY: ${{ secrets.KRX_API_KEY }}
       KRX_PUBLIC_DISPLAY_APPROVED: ${{ vars.KRX_PUBLIC_DISPLAY_APPROVED }}
-      TWELVE_DATA_API_KEY: ${{ secrets.TWELVE_DATA_API_KEY }}
-      TWELVE_DATA_EXTERNAL_DISPLAY_APPROVED: ${{ vars.TWELVE_DATA_EXTERNAL_DISPLAY_APPROVED }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - uses: astral-sh/setup-uv@v6
-      - name: Enforce at least one approved provider path
-        run: |
-          if test -n "$KRX_API_KEY" && test "$KRX_PUBLIC_DISPLAY_APPROVED" = "true"; then
-            exit 0
-          fi
-          test "$TWELVE_DATA_EXTERNAL_DISPLAY_APPROVED" = "true"
-          test -n "$TWELVE_DATA_API_KEY"
       - run: uv sync --frozen
-      - name: Collect only through the normalized publisher
+      - name: Collect through the normalized free-source publisher
         id: collect
+        env:
+          REFRESH_BACKFILL: ${{ inputs.backfill }}
+          REFRESH_ASSET_IDS: ${{ inputs.asset_ids }}
+          REFRESH_START: ${{ inputs.start }}
+          REFRESH_END: ${{ inputs.end }}
         run: |
+          refresh_args=(--catalog config/catalog.json)
+          if test "$REFRESH_BACKFILL" = "true"; then
+            refresh_args+=(--backfill)
+          fi
+          if test -n "$REFRESH_ASSET_IDS"; then
+            IFS=',' read -ra requested_assets <<< "$REFRESH_ASSET_IDS"
+            for asset_id in "${requested_assets[@]}"; do
+              if ! [[ "$asset_id" =~ ^[a-z0-9-]+$ ]]; then
+                echo "Invalid catalog asset ID: $asset_id" >&2
+                exit 2
+              fi
+              refresh_args+=(--asset-id "$asset_id")
+            done
+          fi
+          if test -n "$REFRESH_START"; then
+            refresh_args+=(--start "$REFRESH_START")
+          fi
+          if test -n "$REFRESH_END"; then
+            refresh_args+=(--end "$REFRESH_END")
+          fi
           set +e
-          uv run python -m kelly_lab.refresh --catalog config/catalog.json
+          uv run python -m kelly_lab.refresh "${refresh_args[@]}"
           status=$?
           echo "exit_code=$status" >> "$GITHUB_OUTPUT"
           exit 0

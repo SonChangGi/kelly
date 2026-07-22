@@ -162,6 +162,7 @@ def validate_provider_config(
             "providerExchange": configured["providerExchange"],
             "returnBasis": configured["returnBasis"],
             "leveragedProducts": configured.get("leveragedProducts"),
+            "seriesStartFloor": configured.get("seriesStartFloor"),
         }
         actual = {
             "symbol": public["symbol"],
@@ -170,6 +171,7 @@ def validate_provider_config(
             "providerExchange": public["provider"]["exchange"],
             "returnBasis": public["returnBasis"],
             "leveragedProducts": public.get("leveragedProducts"),
+            "seriesStartFloor": public.get("seriesStartFloor"),
         }
         if actual != expected:
             raise ValueError(
@@ -262,6 +264,9 @@ def _validate_asset_against_catalog(asset: dict[str, Any], asset_document: dict[
         raise ValueError(f"column length mismatch for {asset_id}")
     if dates != sorted(set(dates)):
         raise ValueError(f"dates must be sorted and unique for {asset_id}")
+    series_start_floor = asset.get("seriesStartFloor")
+    if dates and series_start_floor and dates[0] < series_start_floor:
+        raise ValueError(f"series starts before identity floor for {asset_id}")
 
     expected_data_as_of = dates[-1] if dates else None
     if asset_document["dataAsOf"] != expected_data_as_of:
@@ -284,15 +289,34 @@ def _validate_asset_against_catalog(asset: dict[str, Any], asset_document: dict[
             actual = returns[index]
             if actual is None or abs(actual - expected) > 1e-10:
                 raise ValueError(f"price/return mismatch for {asset_id} at {dates[index]}")
+        quality = asset_document.get("quality")
+        if not isinstance(quality, dict):
+            raise ValueError(f"published asset quality missing for {asset_id}")
+        if quality.get("observationCount") != len(dates):
+            raise ValueError(f"quality observation count mismatch for {asset_id}")
+        expected_eligibility = len(returns) - 1 >= quality["minimumKellyObservations"]
+        if quality.get("eligibleForKelly") is not expected_eligibility:
+            raise ValueError(f"quality Kelly eligibility mismatch for {asset_id}")
+        if quality["crossCheck"]["state"] == "mismatch":
+            raise ValueError(f"cross-check mismatch cannot be published for {asset_id}")
     elif asset_document["state"] == "unavailable" and dates:
         raise ValueError(f"unavailable asset must not contain observations: {asset_id}")
 
-    catalog_provider = asset["provider"]["provider"]
-    expected_provider = catalog_provider if has_published_data else "none"
-    if asset_document["source"]["provider"] != expected_provider:
+    actual_provider = asset_document["source"]["provider"]
+    if not has_published_data:
+        allowed_providers = {"none"}
+    elif asset["provider"]["provider"] == "krx":
+        allowed_providers = {"krx"}
+    elif asset["returnBasis"] == "total_return_approximation":
+        allowed_providers = {"yahoo_finance", "twelve_data"}
+    elif asset["assetType"] == "fx":
+        allowed_providers = {"fred", "yahoo_finance", "stooq", "twelve_data"}
+    else:
+        allowed_providers = {"yahoo_finance", "stooq", "twelve_data"}
+    if actual_provider not in allowed_providers:
         raise ValueError(
-            f"source provider mismatch for {asset_id}: expected {expected_provider}, "
-            f"found {asset_document['source']['provider']}"
+            f"source provider mismatch for {asset_id}: expected one of "
+            f"{sorted(allowed_providers)}, found {actual_provider}"
         )
     _validate_fx_block(asset, asset_document, dates)
 
@@ -428,8 +452,6 @@ def _validate_worker_catalog(root: Path, catalog_assets: list[dict[str, Any]]) -
         "exchange",
         "currency",
         "timezone",
-        "provider",
-        "providerSymbol",
     )
     static_projection = [
         {
@@ -439,8 +461,6 @@ def _validate_worker_catalog(root: Path, catalog_assets: list[dict[str, Any]]) -
             "exchange": asset["exchange"],
             "currency": asset["currency"],
             "timezone": asset["timezone"],
-            "provider": asset["provider"]["provider"],
-            "providerSymbol": asset["provider"]["symbol"],
         }
         for asset in catalog_assets
     ]
@@ -500,7 +520,15 @@ def _validate_generation_contracts(
         raise ValueError("summary primary entity state mismatch")
 
     providers = automation["provider"]["providers"]
-    if {provider["name"] for provider in providers} != {"krx", "twelve_data"}:
+    expected_providers = {
+        "krx",
+        "yahoo_finance",
+        "finance_data_reader",
+        "stooq",
+        "fred",
+        "finviz",
+    }
+    if {provider["name"] for provider in providers} != expected_providers:
         raise ValueError("automation provider set mismatch")
     if automation["provider"]["configured"] != any(
         provider["configured"] for provider in providers

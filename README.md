@@ -6,7 +6,9 @@ Kelly Allocation Lab은 과거 수익률과 사용자가 입력한 기대값을 
 
 ## 현재 공개 데이터 상태
 
-정적 카탈로그 50개와 데이터 계약은 공개할 수 있지만, 가격 공급자의 외부표시·재배포 권한과 API 키가 확인되기 전에는 즉시조회가 의도적으로 `unavailable`입니다. Yahoo 또는 개인용 요금제로 조용히 대체하지 않습니다. 직접 가정 모드는 공급자 없이 브라우저에서 완전히 계산됩니다.
+정적 카탈로그 50개 중 해외 주식·ETF·지수·환율 48개는 API 키가 필요 없는 연구용 수집 경로로 갱신합니다. Yahoo Chart가 미국 주식·ETF의 배당·분할 조정값과 지수의 종가를 제공하고, FinanceDataReader는 같은 Yahoo 경로의 어댑터 대체 수단으로만 사용합니다. Stooq와 FRED는 독립 가격·환율 확인 또는 대체 경로이고, Finviz 값은 최근 구간 교차검증에만 쓰며 공개 파일에 복제하지 않습니다.
+
+한국 주식 2개는 KRX 공식 Open API만 사용합니다. `KRX_API_KEY`와 명시적 `KRX_PUBLIC_DISPLAY_APPROVED=true` 중 하나라도 없으면 이 두 종목만 사유 코드와 함께 `unavailable`로 남고, 나머지 무료 소스 갱신은 계속됩니다. 현재 관측 수, 출처, 수익률 기준, 교차검증 결과는 각 자산 JSON과 화면에서 확인할 수 있습니다. 직접 가정 모드는 공급자 없이 브라우저에서 완전히 계산됩니다.
 
 ## 계산 범위
 
@@ -44,6 +46,17 @@ uv run kelly-lab rebalance rebalance-input.json --frequency monthly --cost-bps 1
 
 `rebalance-input.json`은 `dates`, `returnsMatrix`, `targetWeights`를 포함합니다. 정상 계산과 실행 중 계약 오류는 표준 출력에 JSON으로 기록되며, 사용할 수 없는 데이터나 잘못된 입력은 `status=unavailable`과 기계 판독 가능한 `reason`으로 종료됩니다. 명령 자체의 필수 인수 누락이나 알 수 없는 옵션은 `argparse` 사용법 오류로 처리됩니다.
 
+정적 시장 데이터 갱신 예시:
+
+```bash
+uv run python -m kelly_lab.refresh --catalog config/catalog.json
+uv run python -m kelly_lab.refresh --catalog config/catalog.json --backfill --start 2021-01-01
+uv run python -m kelly_lab.verify
+```
+
+일반 갱신은 검증된 기존 이력을 보존하면서 새 관측치를 붙입니다. 공급자의 과거 조정값이 바뀌었거나 시작일을 다시 잡아야 할 때만 명시적으로 `--backfill`을 사용합니다.
+특정 종목만 다시 만들 때는 `--asset-id stock-aapl`을 붙이며 여러 종목은 이 옵션을 반복합니다.
+
 ## 검증
 
 ```bash
@@ -72,7 +85,7 @@ docs/                방법론·공급자·운영 문서
 - Summary: `https://sonchanggi.github.io/kelly/data/summary.json`
 - Worker: `/v1/search`, `/v1/history`, `/v1/fx`, `/v1/health`
 
-Pages와 Worker 배포는 각각 GitHub와 Cloudflare 인증 뒤에 진행합니다. 시장 데이터는 KRX 또는 Twelve Data의 공개표시 권한과 서버 측 secret이 각각 확인된 공급자만 활성화하며, API 키 보유만으로 공개 권한을 추정하지 않습니다.
+Pages의 정적 데이터 갱신은 평일 예약 실행과 수동 실행을 모두 지원합니다. 무료 해외 소스에는 secret이 필요하지 않으며 KRX 키는 선택 사항입니다. KRX 공개 게시에는 키와 외부표시 확인 변수가 모두 필요합니다. Cloudflare Worker와 Twelve Data 즉시조회 경로는 이 정적 수집과 분리된 선택 기능으로, 서버 측 secret과 별도 권한 확인 없이는 `unavailable`을 유지합니다.
 
 ## 계산 원칙
 

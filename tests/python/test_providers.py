@@ -208,3 +208,13 @@ def test_krx_key_alone_does_not_enable_public_display() -> None:
     assert not provider.available
     with pytest.raises(ProviderUnavailable, match="PUBLIC_DISPLAY_RIGHTS"):
         provider.history_many(["005930"], date(2026, 7, 20), date(2026, 7, 20))
+
+
+def test_krx_public_display_defaults_to_fail_closed(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("KRX_PUBLIC_DISPLAY_APPROVED", raising=False)
+
+    provider = KrxOfficialApiProvider(api_key="secret")
+
+    assert provider.configured
+    assert not provider.rights_approved
+    assert not provider.available

@@ -76,6 +76,49 @@
         "maxStalenessDays": { "type": "integer", "minimum": 0, "maximum": 10 }
       }
     },
+    "quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "observationCount",
+        "eligibleForKelly",
+        "minimumKellyObservations",
+        "crossCheck"
+      ],
+      "properties": {
+        "observationCount": { "type": "integer", "minimum": 2 },
+        "eligibleForKelly": { "type": "boolean" },
+        "minimumKellyObservations": { "const": 60 },
+        "crossCheck": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "provider",
+            "state",
+            "commonObservations",
+            "medianAbsReturnDifference",
+            "p99AbsReturnDifference"
+          ],
+          "properties": {
+            "provider": {
+              "type": "string",
+              "enum": ["stooq", "yahoo_finance", "fred", "finviz", "none"]
+            },
+            "state": {
+              "type": "string",
+              "enum": ["passed", "unavailable", "insufficient", "mismatch", "not_applicable"]
+            },
+            "commonObservations": { "type": "integer", "minimum": 0 },
+            "medianAbsReturnDifference": {
+              "oneOf": [{ "type": "number", "minimum": 0 }, { "type": "null" }]
+            },
+            "p99AbsReturnDifference": {
+              "oneOf": [{ "type": "number", "minimum": 0 }, { "type": "null" }]
+            }
+          }
+        }
+      }
+    },
     "source": {
       "type": "object",
       "additionalProperties": false,
@@ -88,7 +131,20 @@
         "cachedAt"
       ],
       "properties": {
-        "provider": { "type": "string", "enum": ["twelve_data", "krx", "none"] },
+        "provider": {
+          "type": "string",
+          "enum": ["twelve_data", "krx", "yahoo_finance", "stooq", "fred", "none"]
+        },
+        "adapter": {
+          "type": "string",
+          "enum": ["native", "finance_data_reader", "none"]
+        },
+        "contentDigest": {
+          "oneOf": [
+            { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+            { "type": "null" }
+          ]
+        },
         "normalized": { "const": true },
         "rawRedistribution": { "const": false },
         "sourceUrl": { "type": "string", "format": "uri" },

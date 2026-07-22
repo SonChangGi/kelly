@@ -36,6 +36,66 @@ test("published static generations take precedence while unavailable can fall ba
   assert.equal(testSupport.isReusableStaticPayload(null), false);
 });
 
+test("short published histories keep performance metrics but fail Kelly closed", () => {
+  const returns = Array.from({ length: 25 }, (_, index) => index % 2 === 0 ? 0.01 : -0.004);
+  const dates = Array.from({ length: 26 }, (_, index) => `2026-06-${String(index + 1).padStart(2, "0")}`);
+  const analysis = testSupport.computeHistoricalAnalysis(
+    { returns, dates, returnDates: dates.slice(1) },
+    {
+      annualizationDays: 252,
+      riskFreeRate: 0,
+      borrowingSpread: 0,
+      transactionCostBps: 10,
+      mar: 0,
+      frequency: "monthly",
+    },
+    {
+      quality: {
+        observationCount: 26,
+        eligibleForKelly: false,
+        minimumKellyObservations: 60,
+      },
+    },
+  );
+
+  assert.equal(analysis.metrics.status, "published");
+  assert.equal(analysis.metrics.observations, 25);
+  assert.equal(analysis.kelly.status, "unavailable");
+  assert.equal(analysis.kelly.reasonCode, "insufficient_observations");
+  assert.equal(analysis.exact.status, "unavailable");
+  assert.equal(analysis.rebalance, null);
+  assert.deepEqual(analysis.kellyEligibility, {
+    eligible: false,
+    observations: 25,
+    minimumObservations: 60,
+    reasonCode: "insufficient_observations",
+  });
+});
+
+test("Kelly eligibility requires both source quality approval and 60 selected returns", () => {
+  assert.equal(testSupport.historicalKellyEligibility(null, 60).eligible, true);
+  assert.equal(testSupport.historicalKellyEligibility({ quality: { eligibleForKelly: true, minimumKellyObservations: 60 } }, 59).eligible, false);
+  assert.equal(testSupport.historicalKellyEligibility({ quality: { eligibleForKelly: false, minimumKellyObservations: 60 } }, 100).eligible, false);
+});
+
+test("asset quality metadata stays compact and names the cross-check boundary", () => {
+  const passed = testSupport.qualityMetaHtml({
+    eligibleForKelly: true,
+    minimumKellyObservations: 60,
+    crossCheck: { provider: "finviz", state: "passed", commonObservations: 120 },
+  }, 120);
+  assert.match(passed, /Finviz 교차검증 통과/);
+  assert.doesNotMatch(passed, /Kelly 관측 부족/);
+
+  const short = testSupport.qualityMetaHtml({
+    eligibleForKelly: false,
+    minimumKellyObservations: 60,
+    crossCheck: { provider: "stooq", state: "unavailable", commonObservations: 0 },
+  }, 25);
+  assert.match(short, /교차검증 미확인/);
+  assert.match(short, /Kelly 관측 부족 25\/60/);
+});
+
 test("Worker multi-series response is flattened into the static single-asset shape", () => {
   const result = testSupport.flattenWorkerPayload({
     schemaVersion: 1,
@@ -334,10 +394,17 @@ test("source attribution links are explicit and remain dofollow", () => {
   const html = testSupport.sourceAttributionHtml([
     { provider: "twelve_data" },
     { provider: "krx" },
+    { provider: "yahoo_finance", adapter: "finance_data_reader" },
+    { provider: "stooq" },
+    { provider: "fred" },
   ]);
   assert.match(html, /href="https:\/\/twelvedata\.com"/);
   assert.match(html, /Twelve Data/);
   assert.match(html, /한국거래소 통계정보/);
   assert.match(html, /https:\/\/openapi\.krx\.co\.kr/);
+  assert.match(html, /Yahoo Finance/);
+  assert.match(html, /FinanceDataReader/);
+  assert.match(html, /Stooq/);
+  assert.match(html, /FRED DEXKOUS/);
   assert.doesNotMatch(html, /nofollow/);
 });

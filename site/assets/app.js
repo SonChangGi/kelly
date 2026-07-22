@@ -22,7 +22,7 @@ import {
   sliceSeries,
   validateCorrelationMatrix,
   wealthPath,
-} from "./engine.js?v=20260722.1";
+} from "./engine.js?v=20260722.3";
 import {
   clearChart,
   disposeCharts,
@@ -33,7 +33,7 @@ import {
   renderRebalanceChart,
   renderWealthChart,
   renderWeightsChart,
-} from "./charts.js?v=20260722.1";
+} from "./charts.js?v=20260722.3";
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
@@ -47,6 +47,7 @@ const PORTFOLIO_SOURCES = new Set(["direct", "historical"]);
 const PORTFOLIO_MIN_ASSETS = 2;
 const PORTFOLIO_MAX_ASSETS = 5;
 const MIN_EFFECTIVE_RATE_PERCENT = -99.999999;
+const MIN_KELLY_OBSERVATIONS = 60;
 
 function shareParams(value) {
   if (value instanceof URLSearchParams) return new URLSearchParams(value);
@@ -490,6 +491,33 @@ function isReusableStaticPayload(payload) {
   return [STATUS.PUBLISHED, STATUS.STALE, STATUS.DEGRADED].includes(payloadState(payload));
 }
 
+function historicalKellyEligibility(payload, observations) {
+  const configuredMinimum = Number(payload?.quality?.minimumKellyObservations);
+  const minimumObservations = Number.isInteger(configuredMinimum) && configuredMinimum >= 2
+    ? configuredMinimum
+    : MIN_KELLY_OBSERVATIONS;
+  const observed = Number.isInteger(observations) && observations >= 0 ? observations : 0;
+  const sourceEligible = payload?.quality?.eligibleForKelly;
+  const eligible = sourceEligible !== false && observed >= minimumObservations;
+  return {
+    eligible,
+    observations: observed,
+    minimumObservations,
+    reasonCode: eligible ? null : REASON.INSUFFICIENT_OBSERVATIONS,
+  };
+}
+
+function kellyEligibilityNote(eligibility) {
+  if (eligibility?.reasonCode === REASON.INSUFFICIENT_OBSERVATIONS) {
+    return `일간수익률 ${eligibility.observations.toLocaleString("ko-KR")}개 · 최소 ${eligibility.minimumObservations.toLocaleString("ko-KR")}개 필요`;
+  }
+  return reasonText(eligibility?.reasonCode);
+}
+
+function unavailableKellyResult(reasonCode) {
+  return { status: STATUS.UNAVAILABLE, reasonCode, presets: [] };
+}
+
 function flattenWorkerPayload(payload, requestedSymbol = "") {
   if (payload?.contract !== "kelly-price-series" || !Array.isArray(payload.symbols) || !Array.isArray(payload.metadata)) {
     throw new Error(REASON.DATA_UNAVAILABLE);
@@ -874,6 +902,8 @@ async function loadSelectedAsset() {
     renderAssetMeta(
       { ...entry, returnBasis: series.returnBasis ?? entry.returnBasis, currency: series.currency ?? entry.currency },
       series.source ?? payload.source,
+      payload.quality,
+      series.returns.length,
     );
     initializePeriod(series);
     const resolvedState = payloadState(payload);
@@ -883,7 +913,7 @@ async function loadSelectedAsset() {
     if (!isCurrentRequest("asset", generation)) return;
     if (previousEntry && state.series && state.period) {
       $("#asset-select").value = previousEntry.id;
-      renderAssetMeta(previousEntry, state.series.source);
+      renderAssetMeta(previousEntry, state.series.source, state.rawPayload?.quality, state.series.returns.length);
       setHistoricalAvailability(true);
       showNotice(`${entry?.ticker ?? "선택 자산"} 이력을 적용하지 않고 기존 공식 결과를 보존했습니다. (${reasonText(error.message)})`, "error", "historical");
     } else {
@@ -918,6 +948,10 @@ function sourceProviders(source, providers = new Set(), seen = new WeakSet()) {
   const provider = String(source.provider ?? "").toLowerCase().replaceAll(" ", "_");
   if (["twelve_data", "twelvedata"].includes(provider)) providers.add("twelve_data");
   if (provider === "krx") providers.add("krx");
+  if (["yahoo", "yahoo_finance"].includes(provider)) providers.add("yahoo_finance");
+  if (provider === "stooq") providers.add("stooq");
+  if (provider === "fred") providers.add("fred");
+  if (String(source.adapter ?? "").toLowerCase() === "finance_data_reader") providers.add("finance_data_reader");
   for (const nested of [source.asset, source.fx]) sourceProviders(nested, providers, seen);
   return providers;
 }
@@ -927,16 +961,49 @@ function sourceAttributionHtml(source) {
   return [
     providers.has("twelve_data") ? '<a class="badge source-attribution" href="https://twelvedata.com" target="_blank" rel="noopener">Data provided by Twelve Data</a>' : "",
     providers.has("krx") ? '<a class="badge source-attribution" href="https://openapi.krx.co.kr/" target="_blank" rel="noopener">한국거래소 통계정보</a>' : "",
+    providers.has("yahoo_finance") ? '<a class="badge source-attribution" href="https://finance.yahoo.com/" target="_blank" rel="noopener">Yahoo Finance 시세</a>' : "",
+    providers.has("finance_data_reader") ? '<a class="badge source-attribution" href="https://github.com/FinanceData/FinanceDataReader" target="_blank" rel="noopener">FinanceDataReader 어댑터</a>' : "",
+    providers.has("stooq") ? '<a class="badge source-attribution" href="https://stooq.com/" target="_blank" rel="noopener">Stooq 가격 시세</a>' : "",
+    providers.has("fred") ? '<a class="badge source-attribution" href="https://fred.stlouisfed.org/series/DEXKOUS" target="_blank" rel="noopener">FRED DEXKOUS</a>' : "",
   ].filter(Boolean).join("");
 }
 
-function renderAssetMeta(entry, source = null) {
+function qualityMetaHtml(quality, returnObservations = 0) {
+  if (!quality || typeof quality !== "object") return "";
+  const eligibility = historicalKellyEligibility({ quality }, returnObservations);
+  const crossCheck = quality.crossCheck;
+  const providerLabels = {
+    finviz: "Finviz",
+    fred: "FRED",
+    stooq: "Stooq",
+    yahoo_finance: "Yahoo Finance",
+  };
+  const provider = providerLabels[crossCheck?.provider] ?? crossCheck?.provider;
+  const badges = [];
+  if (crossCheck?.state === "passed") {
+    badges.push(`<span class="badge" title="${escapeHtml(`${crossCheck.commonObservations ?? 0}개 공통 수익률 비교`)}">${escapeHtml(provider || "보조 소스")} 교차검증 통과</span>`);
+  } else if (crossCheck && !["not_applicable", "none"].includes(crossCheck.state)) {
+    const detail = crossCheck.state === "insufficient"
+      ? `${provider || "보조 소스"} 공통 관측 부족`
+      : crossCheck.state === "mismatch"
+        ? `${provider || "보조 소스"} 수익률 차이 기준 초과`
+        : `${provider || "보조 소스"} 응답 확인 불가`;
+    badges.push(`<span class="badge" title="${escapeHtml(detail)}">교차검증 미확인</span>`);
+  }
+  if (!eligibility.eligible) {
+    badges.push(`<span class="badge" title="Kelly 계산에는 최소 ${eligibility.minimumObservations}개 일간수익률이 필요합니다.">Kelly 관측 부족 ${eligibility.observations}/${eligibility.minimumObservations}</span>`);
+  }
+  return badges.join("");
+}
+
+function renderAssetMeta(entry, source = null, quality = null, returnObservations = 0) {
   if (!entry) return;
   $("#asset-meta").innerHTML = [
     `<span class="badge">${escapeHtml(entry.type)}</span>`,
     `<span class="badge">${escapeHtml(entry.currency)}</span>`,
     `<span class="badge">${escapeHtml(returnBasisLabel(entry.returnBasis))}</span>`,
     sourceAttributionHtml(source),
+    qualityMetaHtml(quality, returnObservations),
   ].join("");
 }
 
@@ -1005,23 +1072,31 @@ function historicalInputs() {
   };
 }
 
-function renderHistorical({ includeComparison = true } = {}) {
-  if (!state.series || !state.period) return;
-  const previousComparison = includeComparison ? [] : (state.officialResult?.leverageComparison ?? []);
-  const official = sliceSeries(state.series, state.period.official.start, state.period.official.end);
-  const inputs = historicalInputs();
+function computeHistoricalAnalysis(official, inputs, payload = null) {
   const metrics = performanceMetrics(official.returns, official.dates, {
     annualizationDays: inputs.annualizationDays,
     riskFreeRate: inputs.riskFreeRate,
     mar: inputs.mar,
-    minObservations: 60,
+    minObservations: 2,
   });
+  const kellyEligibility = historicalKellyEligibility(payload, official.returns.length);
   if (metrics.status !== STATUS.PUBLISHED) {
-    nextRequestGeneration("leverage");
-    state.officialResult = null;
-    renderUnavailableHistorical(metrics.reasonCode);
-    clearHistoricalVisuals(reasonText(metrics.reasonCode));
-    return;
+    return {
+      metrics,
+      kellyEligibility,
+      kelly: unavailableKellyResult(metrics.reasonCode),
+      exact: unavailableKellyResult(metrics.reasonCode),
+      rebalance: null,
+    };
+  }
+  if (!kellyEligibility.eligible) {
+    return {
+      metrics,
+      kellyEligibility,
+      kelly: unavailableKellyResult(kellyEligibility.reasonCode),
+      exact: unavailableKellyResult(kellyEligibility.reasonCode),
+      rebalance: null,
+    };
   }
   const kelly = singleAssetKelly({
     expectedExcessReturn: metrics.annualArithmeticReturn.value - inputs.riskFreeRate,
@@ -1033,7 +1108,7 @@ function renderHistorical({ includeComparison = true } = {}) {
     riskFreeRate: inputs.riskFreeRate,
     borrowingSpread: inputs.borrowingSpread,
     annualizationDays: inputs.annualizationDays,
-    minObservations: 60,
+    minObservations: kellyEligibility.minimumObservations,
   });
   const rebalance = kelly.status === STATUS.PUBLISHED ? rebalanceComparison({
     returnsByAsset: [official.returns],
@@ -1044,6 +1119,22 @@ function renderHistorical({ includeComparison = true } = {}) {
     riskFreeRate: inputs.riskFreeRate,
     borrowingSpread: inputs.borrowingSpread,
   }) : null;
+  return { metrics, kellyEligibility, kelly, exact, rebalance };
+}
+
+function renderHistorical({ includeComparison = true } = {}) {
+  if (!state.series || !state.period) return;
+  const previousComparison = includeComparison ? [] : (state.officialResult?.leverageComparison ?? []);
+  const official = sliceSeries(state.series, state.period.official.start, state.period.official.end);
+  const inputs = historicalInputs();
+  const { metrics, kellyEligibility, kelly, exact, rebalance } = computeHistoricalAnalysis(official, inputs, state.rawPayload);
+  if (metrics.status !== STATUS.PUBLISHED) {
+    nextRequestGeneration("leverage");
+    state.officialResult = null;
+    renderUnavailableHistorical(metrics.reasonCode);
+    clearHistoricalVisuals(reasonText(metrics.reasonCode));
+    return;
+  }
   const result = {
     official,
     inputs,
@@ -1051,6 +1142,7 @@ function renderHistorical({ includeComparison = true } = {}) {
     kelly,
     exact,
     rebalance,
+    kellyEligibility,
     assetEntry: state.assetEntry,
     currency: state.currency,
     period: { official: { ...state.period.official } },
@@ -1060,7 +1152,7 @@ function renderHistorical({ includeComparison = true } = {}) {
 
   $("#result-title").textContent = `${state.assetEntry?.ticker ?? state.series.symbol ?? "자산"} 분석 결과`;
   $("#official-period-label").textContent = `${state.period.official.start} – ${state.period.official.end} · ${metrics.observations.toLocaleString("ko-KR")}개 일간수익률`;
-  renderHistoricalKellyCards(kelly, exact);
+  renderHistoricalKellyCards(kelly, exact, kellyEligibility);
   renderMetricCards(metrics, inputs.annualizationDays);
   renderPresets($("#historical-presets"), kelly);
   renderHistoricalCharts(official, metrics, kelly, rebalance);
@@ -1084,10 +1176,20 @@ function clearHistoricalVisuals(reason) {
   $("#rebalance-summary").innerHTML = `<div class="summary-cell"><span>재조정 계산</span><strong>${escapeHtml(message)}</strong></div>`;
 }
 
-function renderHistoricalKellyCards(kelly, exact) {
+function renderHistoricalKellyCards(kelly, exact, eligibility = null) {
   const cards = $("#historical-kelly-cards");
   if (kelly.status !== STATUS.PUBLISHED) {
-    cards.innerHTML = metricCard("Kelly 계산 불가", "—", reasonText(kelly.reasonCode), true);
+    const note = eligibility?.reasonCode === REASON.INSUFFICIENT_OBSERVATIONS
+      ? kellyEligibilityNote(eligibility)
+      : reasonText(kelly.reasonCode);
+    cards.innerHTML = eligibility?.reasonCode === REASON.INSUFFICIENT_OBSERVATIONS
+      ? [
+        metricCard("Kelly 계산 불가", "—", note, true),
+        metricCard("Full Kelly 성장률", "—", "관측치 충족 후 계산"),
+        metricCard("절대 2배 기대성장률", "—", "동일 가정 기준 계산 보류"),
+        metricCard("Exact Kelly", "—", "in-sample 계산 보류"),
+      ].join("")
+      : metricCard("Kelly 계산 불가", "—", note, true);
     return;
   }
   cards.innerHTML = [
@@ -1177,15 +1279,24 @@ function renderHistoricalCharts(official, metrics, kelly, rebalance) {
   renderDrawdownChart($("#drawdown-chart"), official.dates, metrics.drawdowns);
   renderDrawdownDataTable(official.dates, metrics.drawdowns);
   const curve = growthCurve(kelly, state.officialResult.inputs);
-  renderGrowthCurve($("#growth-chart"), curve.points, curve.markers);
-  renderGrowthDataTable("#growth-data-table", curve.points, curve.markers);
+  const kellyUnavailableReason = state.officialResult.kellyEligibility?.reasonCode === REASON.INSUFFICIENT_OBSERVATIONS
+    ? kellyEligibilityNote(state.officialResult.kellyEligibility)
+    : reasonText(kelly.reasonCode);
+  if (kelly.status === STATUS.PUBLISHED) {
+    renderGrowthCurve($("#growth-chart"), curve.points, curve.markers);
+    renderGrowthDataTable("#growth-data-table", curve.points, curve.markers);
+  } else {
+    clearChart($("#growth-chart"), "성장률–레버리지 곡선", kellyUnavailableReason);
+    renderGrowthDataTable("#growth-data-table", [], []);
+  }
   if (rebalance?.status === STATUS.PUBLISHED) {
     renderRebalanceChart($("#rebalance-chart"), official.dates, rebalance);
     renderRebalanceSummary(rebalance);
     renderRebalanceDataTable("#rebalance-data-table", official.dates, rebalance);
   } else {
-    clearChart($("#rebalance-chart"), "재조정 효과 비교", reasonText(rebalance?.reasonCode));
-    $("#rebalance-summary").innerHTML = `<div class="summary-cell"><span>재조정 계산</span><strong>${reasonText(rebalance?.reasonCode)}</strong></div>`;
+    const reason = rebalance?.reasonCode ? reasonText(rebalance.reasonCode) : kellyUnavailableReason;
+    clearChart($("#rebalance-chart"), "재조정 효과 비교", reason);
+    $("#rebalance-summary").innerHTML = `<div class="summary-cell"><span>재조정 계산</span><strong>${escapeHtml(reason)}</strong></div>`;
     renderRebalanceDataTable("#rebalance-data-table", [], rebalance);
   }
 }
@@ -1375,8 +1486,8 @@ function applyOfficialDates(start, end) {
   }
   const applied = applyExplorationRange(next, bounds);
   const candidate = sliceSeries(state.series, applied.official.start, applied.official.end);
-  if (candidate.returns.length < 60) {
-    showNotice("공식 분석에는 최소 60개 공통 일간수익률이 필요합니다. 기존 결과를 보존했습니다.", "error", "historical");
+  if (candidate.returns.length < 2) {
+    showNotice("공식 성과지표에는 최소 2개 일간수익률이 필요합니다. 기존 결과를 보존했습니다.", "error", "historical");
     syncPeriodControls();
     return;
   }
@@ -1581,6 +1692,12 @@ function configureHistoricalEvents() {
       state.series = converted;
       syncCurrencyButtons();
       initializePeriod(converted, previousPeriod);
+      renderAssetMeta(
+        { ...state.assetEntry, returnBasis: converted.returnBasis ?? state.assetEntry?.returnBasis, currency: converted.currency ?? state.assetEntry?.currency },
+        converted.source ?? payload.source,
+        payload.quality,
+        converted.returns.length,
+      );
       renderHistorical();
       showNotice(`${requested === "krw" ? "KRW 환산" : "원통화"}을 적용하고 공식·탐색 기간을 유지했습니다.`, "success", "historical");
     } catch (error) {
@@ -1760,6 +1877,9 @@ async function exportCurrentCsv() {
     ["metric", "sharpe", result.metrics.sharpe.value],
     ["metric", "sortino", result.metrics.sortino.value],
     ["metric", "calmar_style", result.metrics.calmar.value],
+    ["kelly", "status", result.kelly.status],
+    ["kelly", "reason", result.kelly.reasonCode],
+    ["kelly", "minimum_observations", result.kellyEligibility?.minimumObservations],
     ["kelly", "full_theoretical_no_borrowing", result.kelly.theoreticalFullKelly],
     ["kelly", "full_cost_adjusted_raw", result.kelly.optimalWithBorrowing],
     ["kelly", "full_maximum_geometric_growth", result.kelly.maximumAnnualGrowth],
@@ -2345,16 +2465,19 @@ function bootstrap() {
 
 export const testSupport = {
   alignPreviousFx,
+  computeHistoricalAnalysis,
   defaultFiveYearCommonRange,
   fiveYearRange,
   flattenWorkerPayload,
   isReusableStaticPayload,
   isShareableHistoricalAssetId,
+  historicalKellyEligibility,
   normalizeWorkerBaseUrl,
   noticeForMode,
   parsePriceCsv,
   parseShareState,
   quickPeriodStart,
+  qualityMetaHtml,
   removeCorrelationIndex,
   resizeCorrelationMatrix,
   serializeShareState,

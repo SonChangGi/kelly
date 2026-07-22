@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "contract": "kelly-provider-catalog-config",
-  "catalogVersion": "2026-07-21-v3",
-  "defaultProvider": "twelve_data",
+  "catalogVersion": "2026-07-22-v4",
+  "defaultProvider": "yahoo_finance",
   "assets": [
     {
       "id": "kr-005930",
@@ -22,7 +22,7 @@
     },
     {
       "id": "index-gspc",
-      "providerSymbol": "SPX",
+      "providerSymbol": "^GSPC",
       "providerExchange": "INDEX",
       "leveragedProducts": {
         "long2x": "etf-sso",
@@ -33,7 +33,7 @@
     },
     {
       "id": "index-ndx",
-      "providerSymbol": "NDX",
+      "providerSymbol": "^NDX",
       "providerExchange": "INDEX",
       "leveragedProducts": {
         "long2x": "etf-qld",
@@ -44,7 +44,7 @@
     },
     {
       "id": "index-sox",
-      "providerSymbol": "SOX",
+      "providerSymbol": "^SOX",
       "providerExchange": "INDEX",
       "symbol": "^SOX",
       "returnBasis": "price_return"
@@ -122,9 +122,10 @@
     {
       "id": "stock-spcx",
       "providerSymbol": "SPCX",
-      "providerExchange": "US",
+      "providerExchange": "NASDAQ",
       "symbol": "SPCX",
-      "returnBasis": "total_return_approximation"
+      "returnBasis": "total_return_approximation",
+      "seriesStartFloor": "2026-06-12"
     },
     {
       "id": "stock-avgo",
@@ -187,7 +188,8 @@
       "providerSymbol": "ARM",
       "providerExchange": "NASDAQ",
       "symbol": "ARM",
-      "returnBasis": "total_return_approximation"
+      "returnBasis": "total_return_approximation",
+      "seriesStartFloor": "2023-09-14"
     },
     {
       "id": "stock-mrvl",
@@ -250,7 +252,8 @@
       "providerSymbol": "SNDK",
       "providerExchange": "NASDAQ",
       "symbol": "SNDK",
-      "returnBasis": "total_return_approximation"
+      "returnBasis": "total_return_approximation",
+      "seriesStartFloor": "2025-02-24"
     },
     {
       "id": "stock-stx",
@@ -367,7 +370,8 @@
     },
     {
       "id": "fx-usd-krw",
-      "providerSymbol": "USD/KRW",
+      "provider": "fred",
+      "providerSymbol": "DEXKOUS",
       "providerExchange": "FX",
       "symbol": "USD/KRW",
       "returnBasis": "fx_rate"

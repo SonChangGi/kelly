@@ -29,13 +29,24 @@
         "providers": {
           "type": "array",
           "minItems": 2,
-          "maxItems": 2,
+          "maxItems": 6,
           "uniqueItems": true,
-          "items": { "type": "string", "enum": ["krx", "twelve_data"] }
+          "items": {
+            "type": "string",
+            "enum": [
+              "krx",
+              "yahoo_finance",
+              "finance_data_reader",
+              "stooq",
+              "fred",
+              "finviz",
+              "twelve_data"
+            ]
+          }
         },
         "normalizedOnly": { "const": true },
         "rawRedistribution": { "const": false },
-        "rightsRequired": { "const": true }
+        "rightsRequired": { "type": "boolean" }
       }
     },
     "assets": {
@@ -89,11 +100,15 @@
           "additionalProperties": false,
           "required": ["provider", "symbol", "exchange"],
           "properties": {
-            "provider": { "type": "string", "enum": ["krx", "twelve_data"] },
+            "provider": {
+              "type": "string",
+              "enum": ["krx", "yahoo_finance", "fred", "twelve_data"]
+            },
             "symbol": { "type": "string", "minLength": 1, "maxLength": 32 },
             "exchange": { "type": "string", "minLength": 1 }
           }
         },
+        "seriesStartFloor": { "type": "string", "format": "date" },
         "leveragedProducts": {
           "type": "object",
           "additionalProperties": false,

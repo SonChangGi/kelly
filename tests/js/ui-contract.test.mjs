@@ -142,6 +142,18 @@ test("Sortino MAR defaults to risk-free and degraded Exact Kelly remains visible
   assert.match(app, /탐색상한 도달/);
 });
 
+test("short histories preserve performance views while Kelly-dependent views fail closed", () => {
+  assert.match(app, /function computeHistoricalAnalysis/);
+  assert.match(app, /minObservations:\s*2/);
+  assert.match(app, /historicalKellyEligibility\(payload, official\.returns\.length\)/);
+  assert.match(app, /Kelly 계산 불가/);
+  assert.match(app, /일간수익률.*최소.*필요/);
+  assert.match(app, /renderMetricCards\(metrics/);
+  assert.match(app, /renderWealthChart/);
+  assert.match(app, /clearChart\(\$\("#growth-chart"\), "성장률–레버리지 곡선", kellyUnavailableReason\)/);
+  assert.match(charts, /element\.setAttribute\("aria-label", `\$\{title\}\. \$\{subtitle\}`\)/);
+});
+
 test("mode tabs support arrow-key navigation and shared URLs restore all modes", () => {
   assert.match(app, /addEventListener\("keydown", onModeTabKeydown\)/);
   for (const key of ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"]) {
@@ -160,6 +172,10 @@ test("mode tabs support arrow-key navigation and shared URLs restore all modes",
 test("displayed provider data exposes dofollow Twelve Data and official KRX attribution", () => {
   assert.match(app, /href="https:\/\/twelvedata\.com"[^>]*>Data provided by Twelve Data<\/a>/);
   assert.match(app, /href="https:\/\/openapi\.krx\.co\.kr\/"[^>]*>한국거래소 통계정보<\/a>/);
+  assert.match(app, /href="https:\/\/finance\.yahoo\.com\/"[^>]*>Yahoo Finance 시세<\/a>/);
+  assert.match(app, /href="https:\/\/github\.com\/FinanceData\/FinanceDataReader"/);
+  assert.match(app, /href="https:\/\/stooq\.com\/"/);
+  assert.match(app, /href="https:\/\/fred\.stlouisfed\.org\/series\/DEXKOUS"/);
   assert.doesNotMatch(app, /source-attribution[^>]*nofollow/);
   assert.match(app, /renderAssetMeta\([\s\S]*series\.source \?\? payload\.source/);
 });

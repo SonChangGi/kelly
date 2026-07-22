@@ -33,20 +33,34 @@
       "additionalProperties": false,
       "required": ["name", "configured", "rightsApproved", "normalizedOnly", "providers"],
       "properties": {
-        "name": { "type": "string", "enum": ["twelve_data", "krx", "mixed"] },
+        "name": {
+          "type": "string",
+          "enum": ["twelve_data", "krx", "yahoo_finance", "fred", "mixed"]
+        },
         "configured": { "type": "boolean" },
         "rightsApproved": { "type": "boolean" },
         "normalizedOnly": { "const": true },
         "providers": {
           "type": "array",
           "minItems": 2,
-          "maxItems": 2,
+          "maxItems": 6,
           "items": {
             "type": "object",
             "additionalProperties": false,
             "required": ["name", "configured", "rightsApproved"],
             "properties": {
-              "name": { "type": "string", "enum": ["krx", "twelve_data"] },
+              "name": {
+                "type": "string",
+                "enum": [
+                  "krx",
+                  "yahoo_finance",
+                  "finance_data_reader",
+                  "stooq",
+                  "fred",
+                  "finviz",
+                  "twelve_data"
+                ]
+              },
               "configured": { "type": "boolean" },
               "rightsApproved": { "type": "boolean" }
             }

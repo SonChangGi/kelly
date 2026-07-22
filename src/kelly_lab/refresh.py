@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import argparse
 import copy
+import hashlib
 import json
 import os
+import statistics
 import tempfile
 from dataclasses import replace
 from datetime import UTC, date, datetime, timedelta
@@ -11,6 +13,13 @@ from pathlib import Path
 from typing import Any
 
 from .data_quality import validate_price_series
+from .free_providers import (
+    FinanceDataReaderYahooProvider,
+    FinvizChartProvider,
+    FredDexkousProvider,
+    StooqCsvProvider,
+    YahooChartProvider,
+)
 from .providers import (
     KrxOfficialApiProvider,
     NormalizedPriceSeries,
@@ -21,6 +30,7 @@ from .providers import (
 
 DATA_BEARING_STATES = {"published", "live_api", "stale", "degraded"}
 PUBLIC_FRESHNESS_DAYS = 10
+FREE_PROVIDER_IDS = {"yahoo_finance", "fred"}
 
 
 def load(path: Path) -> Any:
@@ -51,7 +61,40 @@ def _provider_id(entry: dict[str, Any]) -> str:
     provider = entry.get("provider")
     if isinstance(provider, dict):
         return str(provider["provider"])
-    return str(provider or "twelve_data")
+    return str(provider or "yahoo_finance")
+
+
+def _source_identity(series: NormalizedPriceSeries) -> tuple[str, str, str]:
+    name = series.provider.lower()
+    if "financedatareader" in name:
+        return (
+            "yahoo_finance",
+            "finance_data_reader",
+            "Yahoo Finance research data retrieved through FinanceDataReader; "
+            "no vendor license asserted",
+        )
+    if "yahoo" in name:
+        return (
+            "yahoo_finance",
+            "native",
+            "Yahoo Finance research data; no vendor license asserted",
+        )
+    if "stooq" in name:
+        return ("stooq", "native", "Stooq research data; no vendor license asserted")
+    if "fred" in name:
+        return ("fred", "native", "FRED source notes and underlying series terms apply")
+    if "korea exchange" in name or name == "krx":
+        return ("krx", "native", "KRX Open API terms apply")
+    if "twelve" in name:
+        return ("twelve_data", "native", "External-display approval recorded by the operator")
+    raise ValueError("UNRECOGNIZED_NORMALIZED_PROVIDER")
+
+
+def _series_digest(series: NormalizedPriceSeries) -> str:
+    payload = "\n".join(
+        f"{day}:{float(price):.12g}" for day, price in zip(series.dates, series.prices, strict=True)
+    )
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
 def normalized_asset(
@@ -71,12 +114,7 @@ def normalized_asset(
     else:
         metadata["baseCurrency"] = entry["currency"]
 
-    provider_id = _provider_id(entry)
-    license_label = (
-        "Public-display approval recorded by the operator under KRX Open API terms"
-        if provider_id == "krx"
-        else "External-display approval recorded by the operator"
-    )
+    provider_id, adapter, license_label = _source_identity(series)
     return {
         "schemaVersion": 1,
         "contract": "kelly-asset-history",
@@ -90,12 +128,26 @@ def normalized_asset(
         "returns": returns,
         "source": {
             "provider": provider_id,
+            "adapter": adapter,
             "normalized": True,
             "rawRedistribution": False,
             "sourceUrl": series.source_url,
             "license": license_label,
             "attribution": series.attribution,
             "cachedAt": generated_at,
+            "contentDigest": _series_digest(series),
+        },
+        "quality": {
+            "observationCount": len(series.dates),
+            "eligibleForKelly": len(series.dates) - 1 >= 60,
+            "minimumKellyObservations": 60,
+            "crossCheck": {
+                "provider": "none",
+                "state": "not_applicable",
+                "commonObservations": 0,
+                "medianAbsReturnDifference": None,
+                "p99AbsReturnDifference": None,
+            },
         },
         "limitations": [
             (
@@ -126,18 +178,29 @@ def merge_incremental(
     expected_overlap_dates = {day for day in old_rows if fetched_start <= day <= fetched_end}
     if not expected_overlap_dates.issubset(new_rows):
         raise ValueError("HISTORICAL_OBSERVATION_REMOVED_BACKFILL_REQUIRED")
-    for day in overlap:
-        old_price = float(old_rows[day])
-        new_price = float(new_rows[day])
-        tolerance = max(abs(old_price) * 1e-10, 1e-8)
-        if abs(old_price - new_price) > tolerance:
-            raise ValueError("HISTORICAL_DRIFT_BACKFILL_REQUIRED")
+    if series.return_basis == "total_return_approximation":
+        for previous, current in zip(overlap, overlap[1:], strict=False):
+            old_return = float(old_rows[current]) / float(old_rows[previous]) - 1.0
+            new_return = float(new_rows[current]) / float(new_rows[previous]) - 1.0
+            if abs(old_return - new_return) > 2e-6:
+                raise ValueError("HISTORICAL_DRIFT_BACKFILL_REQUIRED")
+    else:
+        for day in overlap:
+            old_price = float(old_rows[day])
+            new_price = float(new_rows[day])
+            tolerance = max(abs(old_price) * 1e-10, 1e-8)
+            if abs(old_price - new_price) > tolerance:
+                raise ValueError("HISTORICAL_DRIFT_BACKFILL_REQUIRED")
 
     merged = {str(day): float(price) for day, price in old_rows.items()}
     frozen_through = str(existing["dates"][-1])
+    scale = 1.0
+    if series.return_basis == "total_return_approximation":
+        anchor = overlap[-1]
+        scale = float(old_rows[anchor]) / float(new_rows[anchor])
     for day, price in new_rows.items():
         if day > frozen_through:
-            merged[day] = float(price)
+            merged[day] = float(price) * scale
     ordered = sorted(merged.items())
     return replace(
         series,
@@ -165,6 +228,11 @@ def _reason_code(error: Exception) -> str:
         "HISTORICAL_",
         "KRX_",
         "TWELVE_DATA_",
+        "YAHOO_",
+        "FINANCE_DATA_READER_",
+        "STOOQ_",
+        "FRED_",
+        "FINVIZ_",
     )
     if value.startswith(stable_prefixes) and all(
         character.isalnum() or character in {"_", ":", "-"} for character in value
@@ -263,6 +331,184 @@ def _preflight_generation(
         _validate_asset_against_catalog(entry, document)
 
 
+def _trim_to_identity_floor(
+    series: NormalizedPriceSeries, floor: str | None
+) -> NormalizedPriceSeries:
+    if not floor:
+        return series
+    rows = [
+        (day, price) for day, price in zip(series.dates, series.prices, strict=True) if day >= floor
+    ]
+    if len(rows) < 2:
+        raise ProviderResponseError("SERIES_IDENTITY_FLOOR_INSUFFICIENT")
+    return replace(
+        series,
+        dates=tuple(day for day, _ in rows),
+        prices=tuple(float(price) for _, price in rows),
+    )
+
+
+def _free_provider_chain(
+    entry: dict[str, Any],
+    *,
+    yahoo_provider: Any,
+    fdr_provider: Any,
+    stooq_provider: Any,
+    fred_provider: Any,
+) -> list[tuple[str, Any]]:
+    if entry["assetType"] == "fx":
+        return [
+            ("fred", fred_provider),
+            ("yahoo_finance", yahoo_provider),
+            ("stooq", stooq_provider),
+        ]
+    if entry["returnBasis"] == "total_return_approximation":
+        return [
+            ("yahoo_finance", yahoo_provider),
+            ("finance_data_reader", fdr_provider),
+        ]
+    return [("yahoo_finance", yahoo_provider), ("stooq", stooq_provider)]
+
+
+def _fetch_free_series(
+    entry: dict[str, Any],
+    start: date,
+    end: date,
+    *,
+    yahoo_provider: Any,
+    fdr_provider: Any,
+    stooq_provider: Any,
+    fred_provider: Any,
+) -> tuple[NormalizedPriceSeries, list[str]]:
+    failures: list[str] = []
+    adjust = "all" if entry["returnBasis"] == "total_return_approximation" else "none"
+    for _name, provider in _free_provider_chain(
+        entry,
+        yahoo_provider=yahoo_provider,
+        fdr_provider=fdr_provider,
+        stooq_provider=stooq_provider,
+        fred_provider=fred_provider,
+    ):
+        try:
+            series = provider.history(
+                entry["symbol"],
+                start,
+                end,
+                adjust=adjust,
+                exchange=entry["exchange"],
+                currency=entry["currency"],
+                asset_type=entry["assetType"],
+            )
+            series = _trim_to_identity_floor(series, entry.get("seriesStartFloor"))
+            if series.return_basis != entry["returnBasis"]:
+                raise ProviderResponseError("RETURN_BASIS_MISMATCH")
+            return series, failures
+        except (ProviderUnavailable, ProviderResponseError) as error:
+            failures.append(_reason_code(error))
+    raise ProviderUnavailable(failures[-1] if failures else "FREE_PROVIDER_CHAIN_EXHAUSTED")
+
+
+def _return_difference(
+    primary: NormalizedPriceSeries, secondary: NormalizedPriceSeries
+) -> dict[str, Any]:
+    first = dict(zip(primary.dates, primary.prices, strict=True))
+    second = dict(zip(secondary.dates, secondary.prices, strict=True))
+    common = sorted(set(first) & set(second))
+    if len(common) < 21:
+        return {
+            "state": "insufficient",
+            "commonObservations": max(0, len(common) - 1),
+            "medianAbsReturnDifference": None,
+            "p99AbsReturnDifference": None,
+        }
+    differences = []
+    for previous, current in zip(common, common[1:], strict=False):
+        primary_return = float(first[current]) / float(first[previous]) - 1.0
+        secondary_return = float(second[current]) / float(second[previous]) - 1.0
+        differences.append(abs(primary_return - secondary_return))
+    ordered = sorted(differences)
+    p99_index = min(len(ordered) - 1, int((len(ordered) - 1) * 0.99))
+    median = float(statistics.median(ordered))
+    p99 = float(ordered[p99_index])
+    state = "passed" if median <= 0.002 and p99 <= 0.08 else "mismatch"
+    return {
+        "state": state,
+        "commonObservations": len(differences),
+        "medianAbsReturnDifference": median,
+        "p99AbsReturnDifference": p99,
+    }
+
+
+def _cross_check(
+    entry: dict[str, Any],
+    series: NormalizedPriceSeries,
+    start: date,
+    end: date,
+    *,
+    yahoo_provider: Any,
+    stooq_provider: Any,
+    finviz_provider: Any,
+    fred_provider: Any,
+    disabled_providers: set[str],
+) -> dict[str, Any]:
+    source_id, _, _ = _source_identity(series)
+    if entry["assetType"] == "fx" and source_id == "fred":
+        provider_id, provider = "yahoo_finance", yahoo_provider
+    elif entry["assetType"] == "fx":
+        provider_id, provider = "fred", fred_provider
+    elif entry["assetType"] in {"equity", "etf"}:
+        provider_id, provider = "finviz", finviz_provider
+    elif source_id != "stooq":
+        provider_id, provider = "stooq", stooq_provider
+    else:
+        return {
+            "provider": "none",
+            "state": "not_applicable",
+            "commonObservations": 0,
+            "medianAbsReturnDifference": None,
+            "p99AbsReturnDifference": None,
+        }
+    if provider_id in disabled_providers:
+        return {
+            "provider": provider_id,
+            "state": "unavailable",
+            "commonObservations": 0,
+            "medianAbsReturnDifference": None,
+            "p99AbsReturnDifference": None,
+        }
+    try:
+        secondary = provider.history(
+            entry["symbol"],
+            start,
+            end,
+            adjust="none",
+            exchange=entry["exchange"],
+            currency=entry["currency"],
+            asset_type=entry["assetType"],
+        )
+        secondary = _trim_to_identity_floor(secondary, entry.get("seriesStartFloor"))
+        result = _return_difference(series, secondary)
+        return {"provider": provider_id, **result}
+    except (ProviderUnavailable, ProviderResponseError) as error:
+        if _reason_code(error) in {
+            "stooq_html_challenge",
+            "stooq_access_unavailable",
+            "stooq_rate_limited",
+            "finviz_access_unavailable",
+            "finviz_rate_limited",
+            "fred_access_unavailable",
+            "fred_rate_limited",
+        }:
+            disabled_providers.add(provider_id)
+        return {
+            "provider": provider_id,
+            "state": "unavailable",
+            "commonObservations": 0,
+            "medianAbsReturnDifference": None,
+            "p99AbsReturnDifference": None,
+        }
+
+
 def refresh(
     root: Path,
     catalog_path: Path,
@@ -270,8 +516,14 @@ def refresh(
     backfill: bool = False,
     start: date | None = None,
     end: date | None = None,
+    asset_ids: set[str] | None = None,
     krx_provider: KrxOfficialApiProvider | None = None,
     twelve_provider: TwelveDataProvider | None = None,
+    yahoo_provider: YahooChartProvider | None = None,
+    fdr_provider: FinanceDataReaderYahooProvider | None = None,
+    stooq_provider: StooqCsvProvider | None = None,
+    fred_provider: FredDexkousProvider | None = None,
+    finviz_provider: FinvizChartProvider | None = None,
 ) -> int:
     public_catalog = load(root / "data/catalog.json")
     config = load(catalog_path)
@@ -279,17 +531,22 @@ def refresh(
     public_ids = {entry["id"] for entry in public_catalog["assets"]}
     if set(config_by_id) != public_ids:
         raise ValueError("CONFIG_PUBLIC_CATALOG_ID_MISMATCH")
+    selected_ids = set(asset_ids) if asset_ids else public_ids
+    unknown_ids = selected_ids - public_ids
+    if unknown_ids:
+        raise ValueError(f"UNKNOWN_ASSET_ID:{sorted(unknown_ids)[0]}")
     generated_at = datetime.now(UTC).isoformat()
     end = end or date.today()
     default_start = start or end - timedelta(days=round(365.2425 * 5))
     staged: dict[Path, dict[str, Any]] = {}
     refreshed_targets: set[Path] = set()
     failures: list[str] = []
+    crosscheck_disabled: set[str] = set()
 
     krx_entries = [
         entry
         for entry in public_catalog["assets"]
-        if _provider_id(entry) == "krx" and entry["id"] in config_by_id
+        if _provider_id(entry) == "krx" and entry["id"] in selected_ids
     ]
     krx_provider = krx_provider or KrxOfficialApiProvider(cache_dir=root / "var/krx-selected-close")
     if krx_entries and krx_provider.available:
@@ -325,12 +582,13 @@ def refresh(
                         reason=reason,
                     )
     elif krx_entries:
-        reason = (
-            "krx_public_display_rights_unconfirmed"
-            if not krx_provider.rights_approved
-            else "krx_api_key_unavailable"
-        )
-        failures.append(reason)
+        krx_reasons = []
+        if not krx_provider.rights_approved:
+            krx_reasons.append("krx_public_display_rights_unconfirmed")
+        if not krx_provider.configured:
+            krx_reasons.append("krx_api_key_unavailable")
+        failures.extend(krx_reasons)
+        reason = krx_reasons[0]
         for entry in krx_entries:
             target = root / "data" / entry["dataPath"]
             existing = load(target)
@@ -345,11 +603,78 @@ def refresh(
                 )
             )
 
+    yahoo_provider = yahoo_provider or YahooChartProvider()
+    fdr_provider = fdr_provider or FinanceDataReaderYahooProvider()
+    stooq_provider = stooq_provider or StooqCsvProvider()
+    fred_provider = fred_provider or FredDexkousProvider()
+    finviz_provider = finviz_provider or FinvizChartProvider()
+    free_entries = [
+        entry
+        for entry in public_catalog["assets"]
+        if _provider_id(entry) in FREE_PROVIDER_IDS and entry["id"] in selected_ids
+    ]
+    for entry in free_entries:
+        target = root / "data" / entry["dataPath"]
+        try:
+            fetch_start = _fetch_start(target, default_start, backfill=backfill)
+            floor = entry.get("seriesStartFloor")
+            if floor:
+                fetch_start = max(fetch_start, date.fromisoformat(floor))
+            series, adapter_failures = _fetch_free_series(
+                entry,
+                fetch_start,
+                end,
+                yahoo_provider=yahoo_provider,
+                fdr_provider=fdr_provider,
+                stooq_provider=stooq_provider,
+                fred_provider=fred_provider,
+            )
+            series = merge_incremental(load(target), series, backfill=backfill)
+            report = validate_price_series(series, as_of=end, freshness_days=10)
+            if not report.accepted:
+                raise RuntimeError(f"DATA_QUALITY_REJECTED:{entry['id']}")
+            cross_check = _cross_check(
+                entry,
+                series,
+                fetch_start,
+                end,
+                yahoo_provider=yahoo_provider,
+                stooq_provider=stooq_provider,
+                finviz_provider=finviz_provider,
+                fred_provider=fred_provider,
+                disabled_providers=crosscheck_disabled,
+            )
+            if cross_check["state"] == "mismatch":
+                raise ProviderResponseError("INDEPENDENT_SOURCE_MISMATCH")
+            document = normalized_asset(entry, series, generated_at)
+            document["state"] = report.status
+            document["quality"] = {
+                "observationCount": len(series.dates),
+                "eligibleForKelly": len(series.dates) - 1 >= 60,
+                "minimumKellyObservations": 60,
+                "crossCheck": cross_check,
+            }
+            if adapter_failures:
+                document["limitations"].append("primary_adapter_failed_before_same-basis_fallback")
+            if cross_check["state"] != "passed":
+                document["limitations"].append(f"independent_crosscheck_{cross_check['state']}")
+            staged[target] = document
+            refreshed_targets.add(target)
+        except Exception as error:  # preserve each last-good free-source series independently
+            reason = _reason_code(error)
+            failures.append(reason)
+            staged[target] = _preserved_failure_document(
+                load(target),
+                generated_at=generated_at,
+                as_of=end,
+                reason=reason,
+            )
+
     twelve_provider = twelve_provider or TwelveDataProvider()
     twelve_entries = [
         entry
         for entry in public_catalog["assets"]
-        if _provider_id(entry) == "twelve_data" and entry["id"] in config_by_id
+        if _provider_id(entry) == "twelve_data" and entry["id"] in selected_ids
     ]
     if twelve_entries and twelve_provider.available:
         for entry in twelve_entries:
@@ -418,10 +743,27 @@ def refresh(
                 "rates": fx_document["prices"],
                 "maxStalenessDays": 5,
             }
-            for document in staged.values():
+            fx_changed = fx_target in refreshed_targets
+            fx_consumers = (
+                public_catalog["assets"]
+                if fx_changed
+                else [
+                    entry
+                    for entry in public_catalog["assets"]
+                    if root / "data" / entry["dataPath"] in staged
+                ]
+            )
+            for entry in fx_consumers:
+                target = root / "data" / entry["dataPath"]
+                document = staged.get(target)
+                if document is None and entry["currency"] == "USD" and target.exists():
+                    document = copy.deepcopy(load(target))
+                if document is None:
+                    continue
                 metadata = document["metadata"]
                 if metadata.get("baseCurrency") == "USD" and document["assetId"] != fx_entry["id"]:
                     document["fx"] = fx_payload
+                    staged[target] = document
 
     asset_documents: dict[Path, dict[str, Any]] = {}
     for entry in public_catalog["assets"]:
@@ -459,11 +801,11 @@ def refresh(
     )
     summary["status"] = {
         "state": state,
-        "label": "검증된 정적 데이터 일부 공개" if available else "시장 데이터 연결 전",
+        "label": "검증된 연구 데이터 공개" if available else "시장 데이터 연결 전",
         "message": (
-            f"공식 또는 공개표시 권한이 확인된 시계열 {len(available)}/50개를 제공합니다."
+            f"출처와 수익률 기준을 검증한 일별 시계열 {len(available)}/50개를 제공합니다."
             if available
-            else "공급자 권한과 서버 측 비밀키가 확인된 데이터만 게시합니다."
+            else "무료 연구 소스와 KRX 공식 API 수집을 기다리고 있습니다."
         ),
     }
     summary["coverage"]["availableAssetCount"] = len(available)
@@ -473,6 +815,18 @@ def refresh(
 
     automation_path = root / "data/automation-status.json"
     automation = load(automation_path)
+    selected_krx = any(
+        _provider_id(entry) == "krx"
+        for entry in public_catalog["assets"]
+        if entry["id"] in selected_ids
+    )
+    if not selected_krx:
+        unavailable_krx = any(
+            _provider_id(entry) == "krx" and entry["status"] == "unavailable"
+            for entry in public_catalog["assets"]
+        )
+        if unavailable_krx and not krx_provider.configured:
+            failures.append("krx_api_key_unavailable")
     automation.update(
         {
             "state": state,
@@ -487,13 +841,9 @@ def refresh(
     )
     automation["provider"].update(
         {
-            "name": "mixed"
-            if krx_entries and twelve_entries
-            else ("krx" if krx_entries else "twelve_data"),
-            "configured": bool(krx_provider.configured or twelve_provider.configured),
-            "rightsApproved": bool(
-                krx_provider.rights_approved and twelve_provider.rights_approved
-            ),
+            "name": "mixed",
+            "configured": True,
+            "rightsApproved": False,
             "providers": [
                 {
                     "name": "krx",
@@ -501,15 +851,35 @@ def refresh(
                     "rightsApproved": krx_provider.rights_approved,
                 },
                 {
-                    "name": "twelve_data",
-                    "configured": twelve_provider.configured,
-                    "rightsApproved": twelve_provider.rights_approved,
+                    "name": "yahoo_finance",
+                    "configured": True,
+                    "rightsApproved": False,
+                },
+                {
+                    "name": "finance_data_reader",
+                    "configured": True,
+                    "rightsApproved": False,
+                },
+                {
+                    "name": "stooq",
+                    "configured": True,
+                    "rightsApproved": False,
+                },
+                {
+                    "name": "fred",
+                    "configured": True,
+                    "rightsApproved": False,
+                },
+                {
+                    "name": "finviz",
+                    "configured": True,
+                    "rightsApproved": False,
                 },
             ],
         }
     )
     automation["publication"]["assetCount"] = len(available)
-    if staged:
+    if refreshed_targets:
         automation["publication"]["latestPublishedAt"] = generated_at
 
     _preflight_generation(root, public_catalog, summary, automation, asset_documents)
@@ -522,11 +892,17 @@ def refresh(
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Refresh licensed, normalized static histories")
+    parser = argparse.ArgumentParser(description="Refresh validated, normalized research histories")
     parser.add_argument("--catalog", type=Path, default=Path("config/catalog.json"))
     parser.add_argument("--backfill", action="store_true")
     parser.add_argument("--start", type=date.fromisoformat)
     parser.add_argument("--end", type=date.fromisoformat)
+    parser.add_argument(
+        "--asset-id",
+        action="append",
+        dest="asset_ids",
+        help="Refresh only this catalog asset ID; repeat for multiple assets",
+    )
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[2]
     catalog_path = args.catalog if args.catalog.is_absolute() else root / args.catalog
@@ -536,6 +912,7 @@ def main() -> int:
         backfill=args.backfill,
         start=args.start,
         end=args.end,
+        asset_ids=set(args.asset_ids) if args.asset_ids else None,
     )
     print(f"refreshed {count} normalized series")
     automation = load(root / "data/automation-status.json")

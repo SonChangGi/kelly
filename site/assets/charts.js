@@ -85,6 +85,10 @@ export function clearChart(element, title = "계산 결과 없음", subtitle = "
   option.xAxis.data = [];
   option.series = [];
   chart.setOption(option, true);
+  // ECharts does not refresh its generated ARIA description when a chart is
+  // replaced by an empty series. Override the stale prior-series narration.
+  element.setAttribute("role", "img");
+  element.setAttribute("aria-label", `${title}. ${subtitle}`);
 }
 
 export function renderWealthChart(element, { dates, officialWealth, explorationWealth, explorationStart, explorationEnd, returnBasis }, onExplore) {

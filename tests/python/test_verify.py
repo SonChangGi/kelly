@@ -64,6 +64,7 @@ def _published_spy() -> tuple[dict, dict]:
             "maxStalenessDays": 5,
         },
     )
+    document["quality"].update(observationCount=2, eligibleForKelly=False)
     document["source"]["provider"] = "twelve_data"
     return asset, document
 
@@ -180,8 +181,41 @@ def test_rejects_source_provider_mismatch_for_published_and_unavailable() -> Non
 
     asset = _catalog_asset()
     document = _asset_document(asset)
+    asset.update(status="unavailable", availableFrom=None, availableTo=None)
+    document.update(
+        state="unavailable",
+        dataAsOf=None,
+        dates=[],
+        prices=[],
+        returns=[],
+    )
     document["source"]["provider"] = "twelve_data"
     with pytest.raises(ValueError, match="source provider mismatch"):
+        _validate_asset_against_catalog(asset, document)
+
+
+@pytest.mark.parametrize(
+    ("mutate", "message"),
+    [
+        (
+            lambda quality: quality.update(observationCount=3),
+            "quality observation count mismatch",
+        ),
+        (
+            lambda quality: quality.update(eligibleForKelly=True),
+            "quality Kelly eligibility mismatch",
+        ),
+        (
+            lambda quality: quality["crossCheck"].update(state="mismatch"),
+            "cross-check mismatch cannot be published",
+        ),
+    ],
+)
+def test_rejects_forged_published_quality(mutate, message: str) -> None:
+    asset, document = _published_spy()
+    mutate(document["quality"])
+
+    with pytest.raises(ValueError, match=message):
         _validate_asset_against_catalog(asset, document)
 
 

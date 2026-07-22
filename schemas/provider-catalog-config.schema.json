@@ -15,7 +15,10 @@
     "schemaVersion": { "const": 1 },
     "contract": { "const": "kelly-provider-catalog-config" },
     "catalogVersion": { "type": "string", "minLength": 1 },
-    "defaultProvider": { "type": "string", "enum": ["twelve_data"] },
+    "defaultProvider": {
+      "type": "string",
+      "enum": ["yahoo_finance", "twelve_data"]
+    },
     "assets": {
       "type": "array",
       "minItems": 50,
@@ -32,7 +35,10 @@
         ],
         "properties": {
           "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
-          "provider": { "type": "string", "enum": ["krx", "twelve_data"] },
+          "provider": {
+            "type": "string",
+            "enum": ["krx", "yahoo_finance", "fred", "twelve_data"]
+          },
           "providerSymbol": { "type": "string", "minLength": 1, "maxLength": 32 },
           "providerExchange": { "type": "string", "minLength": 1 },
           "symbol": { "type": "string", "minLength": 1, "maxLength": 24 },
@@ -40,6 +46,7 @@
             "type": "string",
             "enum": ["price_return", "total_return_approximation", "fx_rate"]
           },
+          "seriesStartFloor": { "type": "string", "format": "date" },
           "leveragedProducts": {
             "type": "object",
             "additionalProperties": false,

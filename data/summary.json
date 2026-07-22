@@ -3,17 +3,17 @@
   "contract": "quant-research-summary",
   "projectId": "kelly",
   "title": "Kelly Allocation Lab",
-  "state": "unavailable",
-  "generatedAt": "2026-07-21T14:27:11.713144+00:00",
-  "dataAsOf": null,
+  "state": "degraded",
+  "generatedAt": "2026-07-22T00:00:33.145754+00:00",
+  "dataAsOf": "2026-07-22",
   "status": {
-    "state": "unavailable",
-    "label": "시장 데이터 연결 전",
-    "message": "공급자 권한과 서버 측 비밀키가 확인된 데이터만 게시합니다."
+    "state": "degraded",
+    "label": "검증된 연구 데이터 공개",
+    "message": "출처와 수익률 기준을 검증한 일별 시계열 48/50개를 제공합니다."
   },
   "coverage": {
     "assetCount": 50,
-    "availableAssetCount": 0,
+    "availableAssetCount": 48,
     "frequency": "daily"
   },
   "primaryEntities": [
@@ -21,7 +21,7 @@
       "id": "kelly-allocation-lab",
       "name": "Kelly Allocation Lab",
       "kind": "research",
-      "state": "unavailable",
+      "state": "degraded",
       "headlineMetrics": [
         {
           "id": "full-kelly",

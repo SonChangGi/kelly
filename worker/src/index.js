@@ -15,7 +15,7 @@ const ROWS = [
   ["index-sox", "^SOX", "PHLX Semiconductor Sector Index", "index", "INDEX", "USD", "America/New_York", "twelve_data", "SOX"],
   ...["AAPL","MSFT","NVDA","AMZN","GOOGL","META","TSLA","ORCL","CRM","NFLX","SPCX","AVGO","TSM","AMD","ASML","MU","QCOM","TXN","ADI","ARM","MRVL","MCHP","AMAT","LRCX","KLAC","TER","LITE","WDC","SNDK","STX"].map((symbol) => [
     `stock-${symbol.toLowerCase()}`, symbol, symbol, "equity",
-    ["ORCL", "CRM", "TSM"].includes(symbol) ? "NYSE" : symbol === "SPCX" ? "US" : "NASDAQ",
+    ["ORCL", "CRM", "TSM"].includes(symbol) ? "NYSE" : "NASDAQ",
     "USD", "America/New_York", "twelve_data", symbol,
   ]),
   ...["SPY","QQQ","VTI","IWM","SMH","SOXX","GLD","TLT","SSO","SDS","QLD","QID","USD","SSG"].map((symbol) => [

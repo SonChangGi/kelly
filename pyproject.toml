@@ -5,6 +5,7 @@ description = "Transparent Kelly allocation research and portfolio diagnostics"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+  "finance-datareader>=0.9.110,<1",
   "jsonschema>=4.23,<5",
   "numpy>=2.1,<3",
   "pandas>=2.2,<3",

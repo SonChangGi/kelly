@@ -6,10 +6,13 @@ from pathlib import Path
 
 import pytest
 
-from kelly_lab.providers import NormalizedPriceSeries
+from kelly_lab.providers import NormalizedPriceSeries, ProviderUnavailable
 from kelly_lab.refresh import (
+    _cross_check,
     _preserved_failure_document,
     _reason_code,
+    _return_difference,
+    _trim_to_identity_floor,
     _unavailable_document,
     merge_incremental,
     refresh,
@@ -28,6 +31,21 @@ def series(dates: tuple[str, ...], prices: tuple[float, ...]) -> NormalizedPrice
         provider="Korea Exchange",
         source_url="https://openapi.krx.co.kr/",
         attribution="Source: Korea Exchange",
+    )
+
+
+def total_return_series(dates: tuple[str, ...], prices: tuple[float, ...]) -> NormalizedPriceSeries:
+    return NormalizedPriceSeries(
+        symbol="AAPL",
+        dates=dates,
+        prices=prices,
+        currency="USD",
+        exchange="NASDAQ",
+        timezone="America/New_York",
+        return_basis="total_return_approximation",
+        provider="Yahoo Finance",
+        source_url="https://finance.yahoo.com/",
+        attribution="Yahoo Finance adjusted close",
     )
 
 
@@ -70,6 +88,97 @@ def test_incremental_merge_requires_backfill_when_overlap_observation_disappears
     fetched = series(("2026-07-16", "2026-07-20"), (99.0, 102.0))
     with pytest.raises(ValueError, match="OBSERVATION_REMOVED_BACKFILL_REQUIRED"):
         merge_incremental(existing, fetched, backfill=False)
+
+
+def test_adjusted_close_rebase_preserves_returns_and_scales_appended_level() -> None:
+    existing = {
+        "state": "published",
+        "dates": ["2026-07-17", "2026-07-20"],
+        "prices": [100.0, 102.0],
+    }
+    fetched = total_return_series(
+        ("2026-07-17", "2026-07-20", "2026-07-21"),
+        (50.0, 51.0, 52.0),
+    )
+
+    merged = merge_incremental(existing, fetched, backfill=False)
+
+    assert merged.dates == ("2026-07-17", "2026-07-20", "2026-07-21")
+    assert merged.prices == pytest.approx((100.0, 102.0, 104.0))
+
+
+def test_adjusted_close_merge_blocks_changed_historical_return() -> None:
+    existing = {
+        "state": "published",
+        "dates": ["2026-07-17", "2026-07-20"],
+        "prices": [100.0, 102.0],
+    }
+    fetched = total_return_series(("2026-07-17", "2026-07-20"), (50.0, 51.5))
+
+    with pytest.raises(ValueError, match="HISTORICAL_DRIFT_BACKFILL_REQUIRED"):
+        merge_incremental(existing, fetched, backfill=False)
+
+
+def test_identity_floor_removes_reused_ticker_history() -> None:
+    fetched = total_return_series(
+        ("2026-06-11", "2026-06-12", "2026-06-15"),
+        (10.0, 100.0, 101.0),
+    )
+
+    trimmed = _trim_to_identity_floor(fetched, "2026-06-12")
+
+    assert trimmed.dates == ("2026-06-12", "2026-06-15")
+    assert trimmed.prices == (100.0, 101.0)
+
+
+def test_return_crosscheck_passes_level_rebase_but_rejects_return_mismatch() -> None:
+    dates = tuple(f"2026-01-{day:02d}" for day in range(1, 23))
+    primary = total_return_series(dates, tuple(100.0 + day for day in range(22)))
+    rebased = series(dates, tuple((100.0 + day) * 2 for day in range(22)))
+    mismatched_prices = list(rebased.prices)
+    mismatched_prices[11] *= 1.5
+    mismatched = series(dates, tuple(mismatched_prices))
+
+    assert _return_difference(primary, rebased)["state"] == "passed"
+    assert _return_difference(primary, mismatched)["state"] == "mismatch"
+
+
+class UnavailableCrosscheckProvider:
+    def history(self, *_args: object, **_kwargs: object) -> NormalizedPriceSeries:
+        raise ProviderUnavailable("FINVIZ_ACCESS_UNAVAILABLE")
+
+
+def test_finviz_crosscheck_access_failure_is_explicit_and_circuit_breaks() -> None:
+    entry = {
+        "symbol": "AAPL",
+        "assetType": "equity",
+        "exchange": "NASDAQ",
+        "currency": "USD",
+    }
+    dates = tuple(f"2026-01-{day:02d}" for day in range(1, 23))
+    primary = total_return_series(dates, tuple(100.0 + day for day in range(22)))
+    disabled: set[str] = set()
+
+    result = _cross_check(
+        entry,
+        primary,
+        date(2026, 1, 1),
+        date(2026, 1, 22),
+        yahoo_provider=UnavailableCrosscheckProvider(),
+        stooq_provider=UnavailableCrosscheckProvider(),
+        finviz_provider=UnavailableCrosscheckProvider(),
+        fred_provider=UnavailableCrosscheckProvider(),
+        disabled_providers=disabled,
+    )
+
+    assert result == {
+        "provider": "finviz",
+        "state": "unavailable",
+        "commonObservations": 0,
+        "medianAbsReturnDifference": None,
+        "p99AbsReturnDifference": None,
+    }
+    assert disabled == {"finviz"}
 
 
 def test_public_reason_codes_are_stable_and_never_serialize_exception_urls() -> None:

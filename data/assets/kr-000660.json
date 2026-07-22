@@ -3,7 +3,7 @@
   "contract": "kelly-asset-history",
   "state": "unavailable",
   "assetId": "kr-000660",
-  "generatedAt": "2026-07-21T00:00:00+09:00",
+  "generatedAt": "2026-07-22T00:00:33.145754+00:00",
   "dataAsOf": null,
   "metadata": {
     "symbol": "000660.KS",
@@ -20,12 +20,11 @@
     "provider": "none",
     "normalized": true,
     "rawRedistribution": false,
-    "license": "No provider observations published",
+    "license": "No public-display approval recorded",
     "attribution": "No market observations published",
     "cachedAt": null
   },
   "limitations": [
-    "krx_public_display_rights_unconfirmed",
-    "krx_api_key_not_published"
+    "krx_public_display_rights_unconfirmed"
   ]
 }
