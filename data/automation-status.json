@@ -3,9 +3,9 @@
   "contract": "kelly-automation-status",
   "projectId": "kelly",
   "state": "degraded",
-  "generatedAt": "2026-07-22T00:07:17.366444+00:00",
+  "generatedAt": "2026-07-22T00:09:26.834573+00:00",
   "dataAsOf": "2026-07-22",
-  "lastAttemptAt": "2026-07-22T00:07:17.366444+00:00",
+  "lastAttemptAt": "2026-07-22T00:09:26.834573+00:00",
   "lastSuccessAt": "2026-07-22T00:07:17.366444+00:00",
   "schedule": "weekdays after source-market close",
   "provider": {
@@ -52,8 +52,7 @@
     "assetCount": 48
   },
   "reasonCodes": [
-    "historical_observation_removed_backfill_required",
     "krx_api_key_unavailable",
-    "krx_public_display_rights_unconfirmed"
+    "provider_response_invalid"
   ]
 }
