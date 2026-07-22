@@ -3,7 +3,7 @@
   "contract": "kelly-asset-history",
   "state": "published",
   "assetId": "etf-qid",
-  "generatedAt": "2026-07-22T00:22:29.456153+00:00",
+  "generatedAt": "2026-07-22T00:38:16.921758+00:00",
   "dataAsOf": "2026-07-21",
   "metadata": {
     "symbol": "QID",
@@ -3789,7 +3789,7 @@
     "sourceUrl": "https://finance.yahoo.com/",
     "license": "Yahoo Finance research data; no vendor license asserted",
     "attribution": "Data source: Yahoo Finance chart API",
-    "cachedAt": "2026-07-22T00:22:29.456153+00:00",
+    "cachedAt": "2026-07-22T00:38:16.921758+00:00",
     "contentDigest": "278081ff97ab96077dcf233cd43fbb8bfa9dfda7c4c2572c518e15fff4c33940"
   },
   "quality": {
@@ -3798,14 +3798,17 @@
     "minimumKellyObservations": 60,
     "crossCheck": {
       "provider": "finviz",
-      "state": "passed",
-      "commonObservations": 23,
-      "medianAbsReturnDifference": 2.90488131327038e-08,
-      "p99AbsReturnDifference": 6.670602992198127e-08
+      "state": "unavailable",
+      "commonObservations": 0,
+      "windowStart": null,
+      "windowEnd": null,
+      "medianAbsReturnDifference": null,
+      "p99AbsReturnDifference": null
     }
   },
   "limitations": [
-    "Adjusted daily close is a total-return approximation; taxes, slippage, and financing are excluded."
+    "Adjusted daily close is a total-return approximation; taxes, slippage, and financing are excluded.",
+    "independent_crosscheck_unavailable"
   ],
   "fx": {
     "pair": "USD/KRW",

@@ -3,7 +3,7 @@
   "contract": "kelly-asset-history",
   "state": "published",
   "assetId": "index-sox",
-  "generatedAt": "2026-07-22T00:22:29.456153+00:00",
+  "generatedAt": "2026-07-22T00:38:16.921758+00:00",
   "dataAsOf": "2026-07-21",
   "metadata": {
     "symbol": "^SOX",
@@ -3789,7 +3789,7 @@
     "sourceUrl": "https://finance.yahoo.com/",
     "license": "Yahoo Finance research data; no vendor license asserted",
     "attribution": "Data source: Yahoo Finance chart API",
-    "cachedAt": "2026-07-22T00:22:29.456153+00:00",
+    "cachedAt": "2026-07-22T00:38:16.921758+00:00",
     "contentDigest": "b06a6e10b6ddc5b430423067d9c0637b7b90d5fbc627ca8f997cb617aef485bd"
   },
   "quality": {
@@ -3800,6 +3800,8 @@
       "provider": "stooq",
       "state": "unavailable",
       "commonObservations": 0,
+      "windowStart": null,
+      "windowEnd": null,
       "medianAbsReturnDifference": null,
       "p99AbsReturnDifference": null
     }

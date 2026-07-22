@@ -3,7 +3,7 @@
   "contract": "kelly-asset-history",
   "state": "published",
   "assetId": "stock-mrvl",
-  "generatedAt": "2026-07-22T00:22:29.456153+00:00",
+  "generatedAt": "2026-07-22T00:38:16.921758+00:00",
   "dataAsOf": "2026-07-21",
   "metadata": {
     "symbol": "MRVL",
@@ -3789,7 +3789,7 @@
     "sourceUrl": "https://finance.yahoo.com/",
     "license": "Yahoo Finance research data; no vendor license asserted",
     "attribution": "Data source: Yahoo Finance chart API",
-    "cachedAt": "2026-07-22T00:22:29.456153+00:00",
+    "cachedAt": "2026-07-22T00:38:16.921758+00:00",
     "contentDigest": "eacb13fc5e1f97a98a9feb4f5afb61fb359cca10aba62f1ec4cc46123b27f484"
   },
   "quality": {
@@ -3800,6 +3800,8 @@
       "provider": "finviz",
       "state": "passed",
       "commonObservations": 23,
+      "windowStart": "2026-06-16",
+      "windowEnd": "2026-07-21",
       "medianAbsReturnDifference": 3.7331341462554235e-08,
       "p99AbsReturnDifference": 8.295051434625833e-08
     }

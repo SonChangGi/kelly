@@ -3,7 +3,7 @@
   "contract": "kelly-asset-history",
   "state": "published",
   "assetId": "etf-soxx",
-  "generatedAt": "2026-07-22T00:22:29.456153+00:00",
+  "generatedAt": "2026-07-22T00:38:16.921758+00:00",
   "dataAsOf": "2026-07-21",
   "metadata": {
     "symbol": "SOXX",
@@ -3789,7 +3789,7 @@
     "sourceUrl": "https://finance.yahoo.com/",
     "license": "Yahoo Finance research data; no vendor license asserted",
     "attribution": "Data source: Yahoo Finance chart API",
-    "cachedAt": "2026-07-22T00:22:29.456153+00:00",
+    "cachedAt": "2026-07-22T00:38:16.921758+00:00",
     "contentDigest": "ba501a3fe6923cac9465d439bd3b72a29b6120703bab32e5e4b1da98c99bafb0"
   },
   "quality": {
@@ -3800,6 +3800,8 @@
       "provider": "finviz",
       "state": "passed",
       "commonObservations": 23,
+      "windowStart": "2026-06-16",
+      "windowEnd": "2026-07-21",
       "medianAbsReturnDifference": 2.4200854875644495e-08,
       "p99AbsReturnDifference": 6.381256356657872e-08
     }

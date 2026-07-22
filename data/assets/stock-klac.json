@@ -3,7 +3,7 @@
   "contract": "kelly-asset-history",
   "state": "published",
   "assetId": "stock-klac",
-  "generatedAt": "2026-07-22T00:22:29.456153+00:00",
+  "generatedAt": "2026-07-22T00:38:16.921758+00:00",
   "dataAsOf": "2026-07-21",
   "metadata": {
     "symbol": "KLAC",
@@ -3789,7 +3789,7 @@
     "sourceUrl": "https://finance.yahoo.com/",
     "license": "Yahoo Finance research data; no vendor license asserted",
     "attribution": "Data source: Yahoo Finance chart API",
-    "cachedAt": "2026-07-22T00:22:29.456153+00:00",
+    "cachedAt": "2026-07-22T00:38:16.921758+00:00",
     "contentDigest": "c932f936b39cfc63dcfd7bf7cfda38eb2343cdd5bb30e5f9cfd9f8d9e115debd"
   },
   "quality": {
@@ -3800,6 +3800,8 @@
       "provider": "finviz",
       "state": "passed",
       "commonObservations": 23,
+      "windowStart": "2026-06-16",
+      "windowEnd": "2026-07-21",
       "medianAbsReturnDifference": 2.3862739562119373e-08,
       "p99AbsReturnDifference": 6.166271804275425e-08
     }

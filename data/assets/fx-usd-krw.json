@@ -3,7 +3,7 @@
   "contract": "kelly-asset-history",
   "state": "published",
   "assetId": "fx-usd-krw",
-  "generatedAt": "2026-07-22T00:22:29.456153+00:00",
+  "generatedAt": "2026-07-22T00:38:16.921758+00:00",
   "dataAsOf": "2026-07-17",
   "metadata": {
     "symbol": "USD/KRW",
@@ -3769,7 +3769,7 @@
     "sourceUrl": "https://fred.stlouisfed.org/series/DEXKOUS",
     "license": "FRED source notes and underlying series terms apply",
     "attribution": "Board of Governors of the Federal Reserve System (US), DEXKOUS; retrieved from FRED, Federal Reserve Bank of St. Louis",
-    "cachedAt": "2026-07-22T00:22:29.456153+00:00",
+    "cachedAt": "2026-07-22T00:38:16.921758+00:00",
     "contentDigest": "b3aba0ede0e6404b8928b6c506661ebd0019ae2ca3f5a7822149ff2a88f40f3d"
   },
   "quality": {
@@ -3780,6 +3780,8 @@
       "provider": "yahoo_finance",
       "state": "passed",
       "commonObservations": 23,
+      "windowStart": "2026-06-12",
+      "windowEnd": "2026-07-17",
       "medianAbsReturnDifference": 0.006806431333301943,
       "p99AbsReturnDifference": 0.012549324833471487
     }

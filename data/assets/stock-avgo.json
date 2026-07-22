@@ -3,7 +3,7 @@
   "contract": "kelly-asset-history",
   "state": "published",
   "assetId": "stock-avgo",
-  "generatedAt": "2026-07-22T00:22:29.456153+00:00",
+  "generatedAt": "2026-07-22T00:38:16.921758+00:00",
   "dataAsOf": "2026-07-21",
   "metadata": {
     "symbol": "AVGO",
@@ -3789,7 +3789,7 @@
     "sourceUrl": "https://finance.yahoo.com/",
     "license": "Yahoo Finance research data; no vendor license asserted",
     "attribution": "Data source: Yahoo Finance chart API",
-    "cachedAt": "2026-07-22T00:22:29.456153+00:00",
+    "cachedAt": "2026-07-22T00:38:16.921758+00:00",
     "contentDigest": "a32e9c483e8d832b8593b14ea7aadfd321db2e4c34abef8f34d4cb583b3a1a31"
   },
   "quality": {
@@ -3800,6 +3800,8 @@
       "provider": "finviz",
       "state": "passed",
       "commonObservations": 23,
+      "windowStart": "2026-06-16",
+      "windowEnd": "2026-07-21",
       "medianAbsReturnDifference": 3.500903278386147e-08,
       "p99AbsReturnDifference": 1.3703168124656884e-05
     }
