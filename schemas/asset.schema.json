@@ -109,6 +109,12 @@
               "enum": ["passed", "unavailable", "insufficient", "mismatch", "not_applicable"]
             },
             "commonObservations": { "type": "integer", "minimum": 0 },
+            "windowStart": {
+              "oneOf": [{ "type": "string", "format": "date" }, { "type": "null" }]
+            },
+            "windowEnd": {
+              "oneOf": [{ "type": "string", "format": "date" }, { "type": "null" }]
+            },
             "medianAbsReturnDifference": {
               "oneOf": [{ "type": "number", "minimum": 0 }, { "type": "null" }]
             },

@@ -145,6 +145,8 @@ def normalized_asset(
                 "provider": "none",
                 "state": "not_applicable",
                 "commonObservations": 0,
+                "windowStart": None,
+                "windowEnd": None,
                 "medianAbsReturnDifference": None,
                 "p99AbsReturnDifference": None,
             },
@@ -294,6 +296,24 @@ def _preserved_failure_document(
     document["state"] = "stale" if (as_of - last_date).days > PUBLIC_FRESHNESS_DAYS else "degraded"
     document["generatedAt"] = generated_at
     limitations = [str(value) for value in document.get("limitations", [])]
+    quality = document.get("quality")
+    cross_check = quality.get("crossCheck") if isinstance(quality, dict) else None
+    if isinstance(cross_check, dict) and not {
+        "windowStart",
+        "windowEnd",
+    }.issubset(cross_check):
+        cross_check.update(
+            {
+                "state": "unavailable",
+                "commonObservations": 0,
+                "windowStart": None,
+                "windowEnd": None,
+                "medianAbsReturnDifference": None,
+                "p99AbsReturnDifference": None,
+            }
+        )
+        if "independent_crosscheck_unavailable" not in limitations:
+            limitations.append("independent_crosscheck_unavailable")
     if reason not in limitations:
         limitations.append(reason)
     document["limitations"] = limitations
@@ -420,10 +440,14 @@ def _return_difference(
     first = dict(zip(primary.dates, primary.prices, strict=True))
     second = dict(zip(secondary.dates, secondary.prices, strict=True))
     common = sorted(set(first) & set(second))
+    window_start = common[0] if common else None
+    window_end = common[-1] if common else None
     if len(common) < 21:
         return {
             "state": "insufficient",
             "commonObservations": max(0, len(common) - 1),
+            "windowStart": window_start,
+            "windowEnd": window_end,
             "medianAbsReturnDifference": None,
             "p99AbsReturnDifference": None,
         }
@@ -450,6 +474,8 @@ def _return_difference(
     return {
         "state": state,
         "commonObservations": len(differences),
+        "windowStart": window_start,
+        "windowEnd": window_end,
         "medianAbsReturnDifference": median,
         "p99AbsReturnDifference": p99,
     }
@@ -481,6 +507,8 @@ def _cross_check(
             "provider": "none",
             "state": "not_applicable",
             "commonObservations": 0,
+            "windowStart": None,
+            "windowEnd": None,
             "medianAbsReturnDifference": None,
             "p99AbsReturnDifference": None,
         }
@@ -489,6 +517,8 @@ def _cross_check(
             "provider": provider_id,
             "state": "unavailable",
             "commonObservations": 0,
+            "windowStart": None,
+            "windowEnd": None,
             "medianAbsReturnDifference": None,
             "p99AbsReturnDifference": None,
         }
@@ -533,6 +563,8 @@ def _cross_check(
             "provider": provider_id,
             "state": "unavailable",
             "commonObservations": 0,
+            "windowStart": None,
+            "windowEnd": None,
             "medianAbsReturnDifference": None,
             "p99AbsReturnDifference": None,
         }

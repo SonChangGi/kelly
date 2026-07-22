@@ -209,6 +209,24 @@ def test_rejects_source_provider_mismatch_for_published_and_unavailable() -> Non
             lambda quality: quality["crossCheck"].update(state="mismatch"),
             "cross-check mismatch cannot be published",
         ),
+        (
+            lambda quality: quality["crossCheck"].update(commonObservations=19),
+            "passed cross-check has insufficient comparisons",
+        ),
+        (
+            lambda quality: quality["crossCheck"].update(windowStart="2026-01-01"),
+            "cross-check window incomplete",
+        ),
+        (
+            lambda quality: quality["crossCheck"].update(windowStart=None, windowEnd=None),
+            "passed cross-check window missing",
+        ),
+        (
+            lambda quality: quality["crossCheck"].update(
+                windowStart="2026-02-01", windowEnd="2026-01-01"
+            ),
+            "cross-check window order invalid",
+        ),
     ],
 )
 def test_rejects_forged_published_quality(mutate, message: str) -> None:

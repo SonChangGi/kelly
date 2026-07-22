@@ -297,8 +297,35 @@ def _validate_asset_against_catalog(asset: dict[str, Any], asset_document: dict[
         expected_eligibility = len(returns) - 1 >= quality["minimumKellyObservations"]
         if quality.get("eligibleForKelly") is not expected_eligibility:
             raise ValueError(f"quality Kelly eligibility mismatch for {asset_id}")
-        if quality["crossCheck"]["state"] == "mismatch":
+        cross_check = quality["crossCheck"]
+        if cross_check["state"] == "mismatch":
             raise ValueError(f"cross-check mismatch cannot be published for {asset_id}")
+        if cross_check["state"] == "passed":
+            if cross_check["commonObservations"] < 20:
+                raise ValueError(f"passed cross-check has insufficient comparisons for {asset_id}")
+        has_window_start = "windowStart" in cross_check
+        has_window_end = "windowEnd" in cross_check
+        if has_window_start != has_window_end:
+            raise ValueError(f"cross-check window incomplete for {asset_id}")
+        if has_window_start:
+            window_start = cross_check["windowStart"]
+            window_end = cross_check["windowEnd"]
+            if (window_start is None) != (window_end is None):
+                raise ValueError(f"cross-check window incomplete for {asset_id}")
+            if cross_check["state"] == "passed" and (
+                not isinstance(window_start, str) or not isinstance(window_end, str)
+            ):
+                raise ValueError(f"passed cross-check window missing for {asset_id}")
+            if window_start is not None and window_end is not None:
+                if not isinstance(window_start, str) or not isinstance(window_end, str):
+                    raise ValueError(f"cross-check window invalid for {asset_id}")
+                try:
+                    start_date = date.fromisoformat(window_start)
+                    end_date = date.fromisoformat(window_end)
+                except ValueError as error:
+                    raise ValueError(f"cross-check window invalid for {asset_id}") from error
+                if start_date > end_date:
+                    raise ValueError(f"cross-check window order invalid for {asset_id}")
     elif asset_document["state"] == "unavailable" and dates:
         raise ValueError(f"unavailable asset must not contain observations: {asset_id}")
 

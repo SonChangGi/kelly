@@ -22,7 +22,7 @@ import {
   sliceSeries,
   validateCorrelationMatrix,
   wealthPath,
-} from "./engine.js?v=20260722.3";
+} from "./engine.js?v=20260722.4";
 import {
   clearChart,
   disposeCharts,
@@ -33,7 +33,7 @@ import {
   renderRebalanceChart,
   renderWealthChart,
   renderWeightsChart,
-} from "./charts.js?v=20260722.3";
+} from "./charts.js?v=20260722.4";
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
@@ -981,7 +981,10 @@ function qualityMetaHtml(quality, returnObservations = 0) {
   const provider = providerLabels[crossCheck?.provider] ?? crossCheck?.provider;
   const badges = [];
   if (crossCheck?.state === "passed") {
-    badges.push(`<span class="badge" title="${escapeHtml(`${crossCheck.commonObservations ?? 0}개 공통 수익률 비교`)}">${escapeHtml(provider || "보조 소스")} 교차검증 통과</span>`);
+    const window = crossCheck.windowStart && crossCheck.windowEnd
+      ? ` · ${crossCheck.windowStart}~${crossCheck.windowEnd}`
+      : "";
+    badges.push(`<span class="badge" title="${escapeHtml(`${crossCheck.commonObservations ?? 0}개 공통 수익률 비교${window}`)}">${escapeHtml(provider || "보조 소스")} 교차검증 통과</span>`);
   } else if (crossCheck && !["not_applicable", "none"].includes(crossCheck.state)) {
     const detail = crossCheck.state === "insufficient"
       ? `${provider || "보조 소스"} 공통 관측 부족`

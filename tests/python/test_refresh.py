@@ -139,8 +139,32 @@ def test_return_crosscheck_passes_level_rebase_but_rejects_return_mismatch() -> 
     mismatched_prices[11] *= 1.5
     mismatched = series(dates, tuple(mismatched_prices))
 
-    assert _return_difference(primary, rebased)["state"] == "passed"
+    result = _return_difference(primary, rebased)
+    assert result["state"] == "passed"
+    assert result["commonObservations"] == 21
+    assert result["windowStart"] == "2026-01-01"
+    assert result["windowEnd"] == "2026-01-22"
     assert _return_difference(primary, mismatched)["state"] == "mismatch"
+
+
+def test_return_crosscheck_labels_recent_incremental_window() -> None:
+    primary_dates = tuple(f"2026-01-{day:02d}" for day in range(1, 31))
+    secondary_dates = primary_dates[-24:]
+    primary = total_return_series(
+        primary_dates,
+        tuple(100.0 + day for day in range(len(primary_dates))),
+    )
+    secondary = series(
+        secondary_dates,
+        tuple((100.0 + day) * 2 for day in range(6, len(primary_dates))),
+    )
+
+    result = _return_difference(primary, secondary)
+
+    assert result["state"] == "passed"
+    assert result["commonObservations"] == 23
+    assert result["windowStart"] == "2026-01-07"
+    assert result["windowEnd"] == "2026-01-30"
 
 
 def test_fx_crosscheck_allows_different_daily_fix_times_but_blocks_unit_errors() -> None:
@@ -208,6 +232,8 @@ def test_finviz_crosscheck_access_failure_is_explicit_and_circuit_breaks() -> No
         "provider": "finviz",
         "state": "unavailable",
         "commonObservations": 0,
+        "windowStart": None,
+        "windowEnd": None,
         "medianAbsReturnDifference": None,
         "p99AbsReturnDifference": None,
     }
@@ -328,8 +354,21 @@ def test_rights_revocation_removes_previously_published_observations() -> None:
 
 
 def test_rights_approved_failed_refresh_preserves_data_with_honest_state() -> None:
+    legacy = published_asset()
+    legacy["quality"] = {
+        "observationCount": 2,
+        "eligibleForKelly": False,
+        "minimumKellyObservations": 60,
+        "crossCheck": {
+            "provider": "finviz",
+            "state": "passed",
+            "commonObservations": 21,
+            "medianAbsReturnDifference": 0.001,
+            "p99AbsReturnDifference": 0.01,
+        },
+    }
     recent = _preserved_failure_document(
-        published_asset(),
+        legacy,
         generated_at="2026-07-21T00:00:00+00:00",
         as_of=date(2026, 7, 21),
         reason="provider_network_failure",
@@ -346,6 +385,11 @@ def test_rights_approved_failed_refresh_preserves_data_with_honest_state() -> No
     assert recent["prices"] == [100.0, 102.0]
     assert recent["source"]["cachedAt"] == "2026-07-20T12:00:00+00:00"  # type: ignore[index]
     assert "provider_network_failure" in recent["limitations"]  # type: ignore[operator]
+    cross_check = recent["quality"]["crossCheck"]  # type: ignore[index]
+    assert cross_check["state"] == "unavailable"  # type: ignore[index]
+    assert cross_check["windowStart"] is None  # type: ignore[index]
+    assert cross_check["windowEnd"] is None  # type: ignore[index]
+    assert "independent_crosscheck_unavailable" in recent["limitations"]  # type: ignore[operator]
 
 
 def test_refresh_joins_config_to_public_catalog_and_publishes_ranges(tmp_path: Path) -> None:

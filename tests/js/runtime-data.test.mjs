@@ -82,9 +82,16 @@ test("asset quality metadata stays compact and names the cross-check boundary", 
   const passed = testSupport.qualityMetaHtml({
     eligibleForKelly: true,
     minimumKellyObservations: 60,
-    crossCheck: { provider: "finviz", state: "passed", commonObservations: 120 },
+    crossCheck: {
+      provider: "finviz",
+      state: "passed",
+      commonObservations: 23,
+      windowStart: "2026-06-18",
+      windowEnd: "2026-07-21",
+    },
   }, 120);
   assert.match(passed, /Finviz 교차검증 통과/);
+  assert.match(passed, /23개 공통 수익률 비교 · 2026-06-18~2026-07-21/);
   assert.doesNotMatch(passed, /Kelly 관측 부족/);
 
   const short = testSupport.qualityMetaHtml({

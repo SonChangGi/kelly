@@ -54,7 +54,7 @@ uv run python -m kelly_lab.refresh --catalog config/catalog.json --backfill --st
 uv run python -m kelly_lab.verify
 ```
 
-일반 갱신은 검증된 기존 이력을 보존하면서 새 관측치를 붙입니다. 공급자의 과거 조정값이 바뀌었거나 시작일을 다시 잡아야 할 때만 명시적으로 `--backfill`을 사용합니다.
+일반 갱신은 검증된 기존 이력을 보존하면서 새 관측치를 붙입니다. 교차검증 통계의 `windowStart`·`windowEnd`는 해당 갱신에서 실제로 비교한 구간이며, 증분 갱신에서는 전체 저장 이력보다 짧을 수 있습니다. 공급자의 과거 조정값이 바뀌었거나 시작일을 다시 잡아야 할 때만 명시적으로 `--backfill`을 사용합니다.
 특정 종목만 다시 만들 때는 `--asset-id stock-aapl`을 붙이며 여러 종목은 이 옵션을 반복합니다.
 
 ## 검증
