@@ -25,14 +25,22 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 concurrency:
-  group: refresh-data
+  group: kelly-data-writer-${{ github.ref }}
   cancel-in-progress: false
+  queue: max
 
 jobs:
   refresh:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      data_changed: ${{ steps.publish.outputs.data_changed }}
+      published_sha: ${{ steps.publish.outputs.published_sha }}
     env:
       KRX_API_KEY: ${{ secrets.KRX_API_KEY }}
       KRX_PUBLIC_DISPLAY_APPROVED: ${{ vars.KRX_PUBLIC_DISPLAY_APPROVED }}
@@ -78,11 +86,38 @@ jobs:
           exit 0
       - run: uv run python -m kelly_lab.verify
       - name: Commit validated public artifacts
+        id: publish
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch --no-tags origin "$GITHUB_REF_NAME"
+          if [[ "$(git rev-parse HEAD)" != "$(git rev-parse FETCH_HEAD)" ]]; then
+            echo "The target branch advanced during collection; rerun from the new head." >&2
+            exit 1
+          fi
           git add data
-          git diff --cached --quiet || git commit -m "data: refresh validated market series"
-          git push
+          if git diff --cached --quiet; then
+            echo "data_changed=false" >> "$GITHUB_OUTPUT"
+            echo "published_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          else
+            git commit -m "data: refresh validated market series"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+            echo "data_changed=true" >> "$GITHUB_OUTPUT"
+            echo "published_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          fi
       - name: Fail after publishing refresh diagnostics
         run: test "${{ steps.collect.outputs.exit_code }}" = "0"
+
+  deploy:
+    needs: refresh
+    if: >-
+      ${{ always() &&
+          needs.refresh.outputs.data_changed == 'true' &&
+          github.ref_name == github.event.repository.default_branch }}
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/pages.yml
+    with:
+      ref: ${{ needs.refresh.outputs.published_sha }}

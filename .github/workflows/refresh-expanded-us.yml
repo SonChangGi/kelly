@@ -19,35 +19,57 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 concurrency:
-  group: refresh-expanded-us
+  group: kelly-data-writer-${{ github.ref }}
   cancel-in-progress: false
+  queue: max
 
 jobs:
   refresh:
     runs-on: ubuntu-latest
     timeout-minutes: 55
+    permissions:
+      contents: write
+    outputs:
+      data_changed: ${{ steps.publish.outputs.data_changed }}
+      published_sha: ${{ steps.publish.outputs.published_sha }}
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: astral-sh/setup-uv@v6
-      - run: uv sync --frozen
-      - name: Collect the key-free expanded US cache
+      - name: Check expanded publication gate
+        id: preflight
         env:
           REQUESTED_COUNT: ${{ inputs.count || '250' }}
-          EXPANDED_BACKFILL: ${{ inputs.backfill || 'false' }}
           YAHOO_PUBLIC_DISPLAY_APPROVED: ${{ vars.YAHOO_PUBLIC_DISPLAY_APPROVED || 'false' }}
         run: |
           if ! [[ "$REQUESTED_COUNT" =~ ^[0-9]+$ ]] || (( REQUESTED_COUNT < 1 || REQUESTED_COUNT > 500 )); then
             echo "Invalid expanded-universe count: $REQUESTED_COUNT" >&2
             exit 2
           fi
-          if [[ "$YAHOO_PUBLIC_DISPLAY_APPROVED" != "true" ]]; then
-            echo "Expanded Yahoo-derived publication requires repository variable YAHOO_PUBLIC_DISPLAY_APPROVED=true." >&2
-            exit 2
+          if [[ "$YAHOO_PUBLIC_DISPLAY_APPROVED" == "true" ]]; then
+            echo "approved=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "approved=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Expanded Yahoo-derived publication skipped because public-display approval is not recorded."
+            echo "### Expanded US refresh skipped" >> "$GITHUB_STEP_SUMMARY"
+            echo "No provider was called and no public artifact was changed." >> "$GITHUB_STEP_SUMMARY"
           fi
+      - if: steps.preflight.outputs.approved == 'true'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - if: steps.preflight.outputs.approved == 'true'
+        uses: astral-sh/setup-uv@v6
+      - if: steps.preflight.outputs.approved == 'true'
+        run: uv sync --frozen
+      - name: Collect the key-free expanded US cache
+        if: steps.preflight.outputs.approved == 'true'
+        env:
+          REQUESTED_COUNT: ${{ inputs.count || '250' }}
+          EXPANDED_BACKFILL: ${{ inputs.backfill || 'false' }}
+          YAHOO_PUBLIC_DISPLAY_APPROVED: ${{ vars.YAHOO_PUBLIC_DISPLAY_APPROVED || 'false' }}
+        run: |
           refresh_args=(
             --universe auto
             --count "$REQUESTED_COUNT"
@@ -58,6 +80,7 @@ jobs:
           fi
           uv run kelly-lab fetch-us-batch "${refresh_args[@]}"
       - name: Enforce coverage and validate every public contract
+        if: steps.preflight.outputs.approved == 'true'
         env:
           REQUESTED_COUNT: ${{ inputs.count || '250' }}
         run: |
@@ -85,9 +108,36 @@ jobs:
           fi
           uv run python -m kelly_lab.verify
       - name: Commit validated expanded artifacts
+        id: publish
+        if: steps.preflight.outputs.approved == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch --no-tags origin "$GITHUB_REF_NAME"
+          if [[ "$(git rev-parse HEAD)" != "$(git rev-parse FETCH_HEAD)" ]]; then
+            echo "The target branch advanced during collection; rerun from the new head." >&2
+            exit 1
+          fi
           git add data/dynamic-catalog.json data/dynamic-assets
-          git diff --cached --quiet || git commit -m "data: refresh expanded US universe"
-          git push
+          if git diff --cached --quiet; then
+            echo "data_changed=false" >> "$GITHUB_OUTPUT"
+            echo "published_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          else
+            git commit -m "data: refresh expanded US universe"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+            echo "data_changed=true" >> "$GITHUB_OUTPUT"
+            echo "published_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          fi
+
+  deploy:
+    needs: refresh
+    if: >-
+      ${{ needs.refresh.outputs.data_changed == 'true' &&
+          github.ref_name == github.event.repository.default_branch }}
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/pages.yml
+    with:
+      ref: ${{ needs.refresh.outputs.published_sha }}

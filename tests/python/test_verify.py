@@ -345,6 +345,38 @@ def test_validate_local_rejects_cross_contract_aggregate_drift(
         validate_local(root)
 
 
+@pytest.mark.parametrize(
+    ("mutate", "message"),
+    [
+        (
+            lambda document: document.update(lastAttemptAt="2000-01-01T00:00:00+00:00"),
+            "automation attempt timestamp mismatch",
+        ),
+        (
+            lambda document: document.update(lastSuccessAt="2099-01-01T00:00:00+00:00"),
+            "automation success timestamp exceeds attempt",
+        ),
+        (
+            lambda document: document["publication"].update(
+                latestPublishedAt="2099-01-01T00:00:00+00:00"
+            ),
+            "automation publication timestamp exceeds attempt",
+        ),
+    ],
+)
+def test_validate_local_rejects_impossible_automation_timestamps(
+    tmp_path: Path, mutate, message: str
+) -> None:
+    root = _contract_root(tmp_path)
+    path = root / "data/automation-status.json"
+    document = _load(path)
+    mutate(document)
+    path.write_text(json.dumps(document), encoding="utf-8")
+
+    with pytest.raises(ValueError, match=message):
+        validate_local(root)
+
+
 def test_validate_local_rejects_unapproved_leveraged_proxy_mapping(tmp_path: Path) -> None:
     root = _contract_root(tmp_path)
     path = root / "data/catalog.json"
