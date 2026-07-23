@@ -46,8 +46,10 @@ data and are not described as an official Yahoo API product. Dynamic local
 collection remains key-free, but every public single or batch collection fails
 closed unless the operator explicitly supplies
 `YAHOO_PUBLIC_DISPLAY_APPROVED=true` after completing that rights review. The
-weekly GitHub workflow reads the same repository variable and fails before
-collection when it is absent or false. See the
+weekly GitHub workflow reads the same repository variable and records a
+successful no-change skip before checkout or provider discovery when it is
+absent or false. The core weekday publisher likewise skips Yahoo-family
+adapters, records the reason, and continues independent provider paths. See the
 [Yahoo API terms](https://legal.yahoo.com/us/en/yahoo/terms/product-atos/apiforydn/index.html),
 [yfinance legal notice](https://ranaroussi.github.io/yfinance/),
 [FinanceDataReader project](https://github.com/FinanceData/FinanceDataReader),

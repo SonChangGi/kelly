@@ -31,6 +31,12 @@ from .providers import (
 DATA_BEARING_STATES = {"published", "live_api", "stale", "degraded"}
 PUBLIC_FRESHNESS_DAYS = 10
 FREE_PROVIDER_IDS = {"yahoo_finance", "fred"}
+EXPECTED_UNAVAILABLE_REASON_CODES = {
+    "krx_api_key_unavailable",
+    "krx_public_display_rights_unconfirmed",
+    "twelve_data_rights_or_key_unavailable",
+    "yahoo_public_display_rights_unconfirmed",
+}
 
 
 def _yahoo_public_display_approved() -> bool:
@@ -244,12 +250,25 @@ def _reason_code(error: Exception) -> str:
     if value.startswith(stable_prefixes) and all(
         character.isalnum() or character in {"_", ":", "-"} for character in value
     ):
-        return value.lower().replace(":", "_")[:120]
+        return value.lower().replace(":", "_").replace("-", "_")[:120]
     if isinstance(error, ProviderUnavailable):
         return "provider_unavailable"
     if isinstance(error, ProviderResponseError):
         return "provider_response_invalid"
     return "refresh_failed"
+
+
+def _refresh_exit_code(refreshed_count: int, reason_codes: list[str]) -> int:
+    unexpected_failures = set(reason_codes) - EXPECTED_UNAVAILABLE_REASON_CODES
+    if unexpected_failures:
+        return 1
+    if refreshed_count > 0:
+        return 0
+    return 0 if reason_codes else 1
+
+
+def _refresh_succeeded(refreshed_count: int, reason_codes: list[str]) -> bool:
+    return refreshed_count > 0 and _refresh_exit_code(refreshed_count, reason_codes) == 0
 
 
 def _unavailable_document(
@@ -415,16 +434,20 @@ def _fetch_free_series(
     fred_provider: Any,
     yahoo_allowed: bool = True,
 ) -> tuple[NormalizedPriceSeries, list[str]]:
-    failures: list[str] = []
+    yahoo_skipped = _provider_id(entry) == "yahoo_finance" and not yahoo_allowed
+    failures = ["yahoo_public_display_rights_unconfirmed"] if yahoo_skipped else []
     adjust = "all" if entry["returnBasis"] == "total_return_approximation" else "none"
-    for _name, provider in _free_provider_chain(
+    chain = _free_provider_chain(
         entry,
         yahoo_provider=yahoo_provider,
         fdr_provider=fdr_provider,
         stooq_provider=stooq_provider,
         fred_provider=fred_provider,
         yahoo_allowed=yahoo_allowed,
-    ):
+    )
+    if not chain and yahoo_skipped:
+        raise ProviderUnavailable("YAHOO_PUBLIC_DISPLAY_RIGHTS_UNCONFIRMED")
+    for _name, provider in chain:
         try:
             series = provider.history(
                 entry["symbol"],
@@ -623,13 +646,6 @@ def refresh(
     if unknown_ids:
         raise ValueError(f"UNKNOWN_ASSET_ID:{sorted(unknown_ids)[0]}")
     yahoo_display_approved = _yahoo_public_display_approved()
-    selected_yahoo_entries = [
-        entry
-        for entry in public_catalog["assets"]
-        if entry["id"] in selected_ids and _provider_id(entry) == "yahoo_finance"
-    ]
-    if selected_yahoo_entries and not yahoo_display_approved:
-        raise ProviderUnavailable("YAHOO_PUBLIC_DISPLAY_RIGHTS_UNCONFIRMED")
     generated_at = datetime.now(UTC).isoformat()
     end = end or date.today()
     default_start = start or end - timedelta(days=round(365.2425 * 5))
@@ -710,6 +726,13 @@ def refresh(
     ]
     for entry in free_entries:
         target = root / "data" / entry["dataPath"]
+        yahoo_skip_reason = (
+            "yahoo_public_display_rights_unconfirmed"
+            if _provider_id(entry) == "yahoo_finance" and not yahoo_display_approved
+            else None
+        )
+        if yahoo_skip_reason is not None:
+            failures.append(yahoo_skip_reason)
         try:
             fetch_start = _fetch_start(target, default_start, backfill=backfill)
             floor = entry.get("seriesStartFloor")
@@ -725,6 +748,10 @@ def refresh(
                 fred_provider=fred_provider,
                 yahoo_allowed=yahoo_display_approved,
             )
+            expected_adapter_skips = sorted(
+                set(adapter_failures) & EXPECTED_UNAVAILABLE_REASON_CODES
+            )
+            failures.extend(expected_adapter_skips)
             series = merge_incremental(load(target), series, backfill=backfill)
             report = validate_price_series(series, as_of=end, freshness_days=10)
             if not report.accepted:
@@ -753,6 +780,9 @@ def refresh(
             }
             if adapter_failures:
                 document["limitations"].append("primary_adapter_failed_before_same-basis_fallback")
+            document["limitations"].extend(
+                reason for reason in expected_adapter_skips if reason not in document["limitations"]
+            )
             if cross_check["state"] != "passed":
                 document["limitations"].append(f"independent_crosscheck_{cross_check['state']}")
             staged[target] = document
@@ -760,12 +790,15 @@ def refresh(
         except Exception as error:  # preserve each last-good free-source series independently
             reason = _reason_code(error)
             failures.append(reason)
-            staged[target] = _preserved_failure_document(
+            document = _preserved_failure_document(
                 load(target),
                 generated_at=generated_at,
                 as_of=end,
                 reason=reason,
             )
+            if yahoo_skip_reason is not None and yahoo_skip_reason not in document["limitations"]:
+                document["limitations"].append(yahoo_skip_reason)
+            staged[target] = document
 
     twelve_provider = twelve_provider or TwelveDataProvider()
     twelve_entries = [
@@ -927,6 +960,8 @@ def refresh(
                 failures.append("krx_api_key_unavailable")
             if not krx_provider.rights_approved:
                 failures.append("krx_public_display_rights_unconfirmed")
+    reason_codes = sorted(set(failures))
+    attempt_succeeded = _refresh_succeeded(len(refreshed_targets), reason_codes)
     automation.update(
         {
             "state": state,
@@ -934,9 +969,9 @@ def refresh(
             "dataAsOf": max(data_dates) if data_dates else None,
             "lastAttemptAt": generated_at,
             "lastSuccessAt": (
-                generated_at if refreshed_targets else automation.get("lastSuccessAt")
+                generated_at if attempt_succeeded else automation.get("lastSuccessAt")
             ),
-            "reasonCodes": sorted(set(failures)),
+            "reasonCodes": reason_codes,
         }
     )
     automation["provider"].update(
@@ -1016,13 +1051,7 @@ def main() -> int:
     )
     print(f"refreshed {count} normalized series")
     automation = load(root / "data/automation-status.json")
-    expected_unavailable = {
-        "krx_api_key_unavailable",
-        "krx_public_display_rights_unconfirmed",
-        "twelve_data_rights_or_key_unavailable",
-    }
-    unexpected_failures = set(automation["reasonCodes"]) - expected_unavailable
-    return 0 if count and not unexpected_failures else 1
+    return _refresh_exit_code(count, automation["reasonCodes"])
 
 
 if __name__ == "__main__":

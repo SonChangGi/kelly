@@ -148,7 +148,7 @@ docs/                방법론·공급자·운영 문서
 - Summary: `https://sonchanggi.github.io/kelly/data/summary.json`
 - Worker: `/v1/search`, `/v1/history`, `/v1/fx`, `/v1/health`
 
-Pages의 정적 데이터 갱신은 평일 예약 실행과 수동 실행을 모두 지원합니다. 무료 해외 소스에는 API secret이 필요하지 않지만 Yahoo 계열 공개 갱신은 별도 권한 확인 변수가 필요하며, KRX 키는 선택 사항입니다. KRX 공개 게시에는 키와 외부표시 확인 변수가 모두 필요합니다. 선택적 Cloudflare Worker의 미국 티커 검색·이력도 Yahoo 메타데이터 검증과 `YAHOO_PUBLIC_DISPLAY_APPROVED=true`가 함께 있어야 활성화됩니다. Worker의 USD/KRW Twelve Data 경로는 서버 측 secret과 별도 외부표시 권한이 없으면 `unavailable`을 유지합니다.
+Pages의 정적 데이터 갱신은 평일 예약 실행과 수동 실행을 모두 지원합니다. 무료 해외 소스에는 API secret이 필요하지 않지만 Yahoo 계열 공개 갱신은 별도 권한 확인 변수가 필요하며, KRX 키는 선택 사항입니다. Yahoo 공개표시 승인이 없으면 Yahoo·FinanceDataReader 호출은 건너뛰고 그 사유를 자동화 상태에 남긴 뒤 FRED·KRX·동일 기준 Stooq 경로를 계속 처리합니다. KRX 공개 게시에는 키와 외부표시 확인 변수가 모두 필요합니다. 선택적 Cloudflare Worker의 미국 티커 검색·이력도 Yahoo 메타데이터 검증과 `YAHOO_PUBLIC_DISPLAY_APPROVED=true`가 함께 있어야 활성화됩니다. Worker의 USD/KRW Twelve Data 경로는 서버 측 secret과 별도 외부표시 권한이 없으면 `unavailable`을 유지합니다.
 
 ## 계산 원칙
 

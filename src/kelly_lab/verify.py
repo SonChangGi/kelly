@@ -10,7 +10,7 @@ import subprocess
 import time
 import urllib.parse
 import urllib.request
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
@@ -757,6 +757,15 @@ def _validate_generation_contracts(
         raise ValueError("automation publication asset count mismatch")
     if len({catalog["generatedAt"], summary["generatedAt"], automation["generatedAt"]}) != 1:
         raise ValueError("generation timestamp mismatch")
+    if automation["lastAttemptAt"] != automation["generatedAt"]:
+        raise ValueError("automation attempt timestamp mismatch")
+    attempt_at = datetime.fromisoformat(automation["lastAttemptAt"])
+    last_success_at = automation["lastSuccessAt"]
+    if last_success_at is not None and datetime.fromisoformat(last_success_at) > attempt_at:
+        raise ValueError("automation success timestamp exceeds attempt")
+    latest_published_at = automation["publication"]["latestPublishedAt"]
+    if latest_published_at is not None and datetime.fromisoformat(latest_published_at) > attempt_at:
+        raise ValueError("automation publication timestamp exceeds attempt")
 
     entity = next(
         (

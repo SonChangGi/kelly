@@ -3,13 +3,19 @@ name: Deploy Pages
 on:
   push:
     branches: [main]
-  # Commits made by refresh-data with GITHUB_TOKEN do not recursively emit a
-  # push-triggered workflow.  Deploy the validated default-branch snapshot
-  # when that workflow completes, including a diagnostics-only failed run.
-  workflow_run:
-    workflows: ["Refresh validated market data", "Refresh expanded US universe"]
-    types: [completed]
   workflow_dispatch:
+    inputs:
+      ref:
+        description: "Optional exact commit to deploy"
+        required: false
+        type: string
+  workflow_call:
+    inputs:
+      ref:
+        description: "Exact validated commit to deploy"
+        required: false
+        default: ""
+        type: string
 
 permissions:
   contents: read
@@ -19,6 +25,7 @@ permissions:
 concurrency:
   group: pages
   cancel-in-progress: false
+  queue: max
 
 jobs:
   deploy:
@@ -28,22 +35,51 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
-      - uses: actions/setup-node@v4
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+      - name: Skip a superseded deployment
+        id: freshness
+        run: |
+          git fetch --no-tags --depth=1 origin main
+          requested_sha="$(git rev-parse HEAD)"
+          latest_sha="$(git rev-parse FETCH_HEAD)"
+          if [[ "$requested_sha" == "$latest_sha" ]]; then
+            echo "current=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "current=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipping superseded Pages commit ${requested_sha}; current main is ${latest_sha}."
+            echo "### Pages deployment skipped" >> "$GITHUB_STEP_SUMMARY"
+            echo "A newer commit is already present on main." >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - if: steps.freshness.outputs.current == 'true'
+        uses: astral-sh/setup-uv@v6
+      - if: steps.freshness.outputs.current == 'true'
+        uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-      - run: uv sync --frozen
-      - run: npm ci
-      - run: uv run pytest
-      - run: npm run check
-      - run: npm --prefix worker test
-      - run: uv run python -m kelly_lab.verify
-      - run: npm run build
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+      - if: steps.freshness.outputs.current == 'true'
+        run: uv sync --frozen
+      - if: steps.freshness.outputs.current == 'true'
+        run: npm ci
+      - if: steps.freshness.outputs.current == 'true'
+        run: uv run pytest
+      - if: steps.freshness.outputs.current == 'true'
+        run: npm run check
+      - if: steps.freshness.outputs.current == 'true'
+        run: npm --prefix worker test
+      - if: steps.freshness.outputs.current == 'true'
+        run: uv run python -m kelly_lab.verify
+      - if: steps.freshness.outputs.current == 'true'
+        run: npm run build
+      - if: steps.freshness.outputs.current == 'true'
+        uses: actions/configure-pages@v5
+      - if: steps.freshness.outputs.current == 'true'
+        uses: actions/upload-pages-artifact@v3
         with:
           path: dist
       - id: deployment
+        if: steps.freshness.outputs.current == 'true'
         uses: actions/deploy-pages@v4
-      - run: uv run python -m kelly_lab.verify --base-url "${{ steps.deployment.outputs.page_url }}"
+      - if: steps.freshness.outputs.current == 'true'
+        run: uv run python -m kelly_lab.verify --base-url "${{ steps.deployment.outputs.page_url }}"
