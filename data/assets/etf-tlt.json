@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "contract": "kelly-asset-history",
-  "state": "published",
+  "state": "degraded",
   "assetId": "etf-tlt",
-  "generatedAt": "2026-07-22T00:56:54.482095+00:00",
+  "generatedAt": "2026-07-24T00:57:06.944820+00:00",
   "dataAsOf": "2026-07-21",
   "metadata": {
     "symbol": "TLT",
@@ -3807,7 +3807,8 @@
     }
   },
   "limitations": [
-    "Adjusted daily close is a total-return approximation; taxes, slippage, and financing are excluded."
+    "Adjusted daily close is a total-return approximation; taxes, slippage, and financing are excluded.",
+    "yahoo_public_display_rights_unconfirmed"
   ],
   "fx": {
     "pair": "USD/KRW",
